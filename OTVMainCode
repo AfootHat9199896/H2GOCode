@@ -1,1 +1,133 @@
+#include "Arduino.h"
+#include "Enes100.h"
+#include "Tank.h"
 
+
+
+void setup() {
+    float x, y, t;
+    Enes100.begin("Simulator", FIRE, 3, 1116, 8, 9);
+    Tank.begin();
+    Enes100.println("Starting driving");
+    Enes100.print("X = "); Enes100.println(Enes100.getX());
+    Enes100.print("Y = "); Enes100.println(Enes100.getY());
+    Enes100.print("Theta = "); Enes100.println(Enes100.getTheta());
+    t = Enes100.getTheta(); 
+    x = Enes100.getX();
+    y = Enes100.getY();
+    if (y > 1){
+        goToY(0.55);
+        //mission();
+        reverseY(0.25);
+    } else {
+        goToY(1.45);
+        //mission();
+        reverseY(0.25);
+    }
+    goToX(1);
+    goToY(1.88);
+    goToX(3);
+    goToY(1.6);
+    goToX(3.75);
+}
+
+void loop() {
+    delay(100);
+}
+
+void turn(float degree){
+    if (abs((degree - t)) > HALF_PI){
+        while (abs(degree - t) > .1) {
+            Tank.setLeftMotorPWM(-31);
+            Tank.setRightMotorPWM(31);
+            t = Enes100.getTheta();
+        }
+        Tank.setLeftMotorPWM(0);
+        Tank.setRightMotorPWM(0);
+        while (abs(degree - t) > .001) {
+            Tank.setLeftMotorPWM(-3);
+            Tank.setRightMotorPWM(3);
+            t = Enes100.getTheta();
+        }
+        Tank.setLeftMotorPWM(0);
+        Tank.setRightMotorPWM(0);
+    } else {
+        while (abs(degree - t) > .1) {
+            Tank.setLeftMotorPWM(31);
+            Tank.setRightMotorPWM(-31);
+            t = Enes100.getTheta();
+        }
+        Tank.setLeftMotorPWM(0);
+        Tank.setRightMotorPWM(0);
+        while (abs(degree - t) > .001) {
+            Tank.setLeftMotorPWM(3);
+            Tank.setRightMotorPWM(-3);
+            t = Enes100.getTheta();
+        }
+        Tank.setLeftMotorPWM(0);
+        Tank.setRightMotorPWM(0);
+    }
+}
+
+void goToY(float Y){
+    if (Y > y) {
+        turn(HALF_PI);
+    } else {
+        turn(-1*HALF_PI);
+    }
+    while (abs(Y - y) > .05){
+        Tank.setLeftMotorPWM(31);
+        Tank.setRightMotorPWM(31);
+        y = Enes100.getY();
+    }
+    Tank.setLeftMotorPWM(0);
+    Tank.setRightMotorPWM(0);
+    while (abs(Y - y) > 0.001){
+        Tank.setLeftMotorPWM(3);
+        Tank.setRightMotorPWM(3);
+        y = Enes100.getY();
+    }
+    Tank.setLeftMotorPWM(0);
+    Tank.setRightMotorPWM(0);
+}
+
+void goToX(float X){
+    if (X > x) {
+        turn(0);
+    } else {
+        turn(PI);
+    }
+    while (abs(X - x) > .05){
+        Tank.setLeftMotorPWM(31);
+        Tank.setRightMotorPWM(31);
+        x = Enes100.getX();
+    }
+    Tank.setLeftMotorPWM(0);
+    Tank.setRightMotorPWM(0);
+    while (abs(X - x) > 0.001){
+        Tank.setLeftMotorPWM(3);
+        Tank.setRightMotorPWM(3);
+        x = Enes100.getX();
+    }
+    Tank.setLeftMotorPWM(0);
+    Tank.setRightMotorPWM(0);
+}
+
+void reverseY(float dist){
+    float desired;
+    desired = y - dist;
+    while (abs(y - desired) > .05){
+        Tank.setLeftMotorPWM(-31);
+        Tank.setRightMotorPWM(-31);
+        y = Enes100.getY();
+    }
+    Tank.setLeftMotorPWM(0);
+    Tank.setRightMotorPWM(0);
+    while (abs(y - desired) > 0.001){
+        Tank.setLeftMotorPWM(-3);
+        Tank.setRightMotorPWM(-3);
+        y = Enes100.getY();
+    }
+    Tank.setLeftMotorPWM(0);
+    Tank.setRightMotorPWM(0);
+}
