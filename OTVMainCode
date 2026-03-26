@@ -2,7 +2,7 @@
 #include "Enes100.h"
 #include "Tank.h"
 
-// This is simulator code
+
 
 void setup() {
     float x, y, t;
@@ -36,7 +36,9 @@ void loop() {
 }
 
 void turn(float degree){
-    if (abs((degree - t)) > HALF_PI){
+    float d;
+    d = getShortestTurn(t, degree);
+    if (d > 0){
         while (abs(degree - t) > .1) {
             Tank.setLeftMotorPWM(-31);
             Tank.setRightMotorPWM(31);
@@ -115,19 +117,48 @@ void goToX(float X){
 
 void reverseY(float dist){
     float desired;
-    desired = y - dist;
-    while (abs(y - desired) > .05){
-        Tank.setLeftMotorPWM(-31);
-        Tank.setRightMotorPWM(-31);
-        y = Enes100.getY();
+    if (t > 0){
+        desired = y - dist;
+        while (abs(y - desired) > .05){
+            Tank.setLeftMotorPWM(-31);
+            Tank.setRightMotorPWM(-31);
+            y = Enes100.getY();
+        }
+        Tank.setLeftMotorPWM(0);
+        Tank.setRightMotorPWM(0);
+        while (abs(y - desired) > 0.001){
+            Tank.setLeftMotorPWM(-3);
+            Tank.setRightMotorPWM(-3);
+            y = Enes100.getY();
+        }
+    } else {
+        desired = y + dist;
+        while (abs(y - desired) > .05){
+            Tank.setLeftMotorPWM(-31);
+            Tank.setRightMotorPWM(-31);
+            y = Enes100.getY();
+        }  
+        Tank.setLeftMotorPWM(0);
+        Tank.setRightMotorPWM(0);
+        while (abs(y - desired) > 0.001){
+            Tank.setLeftMotorPWM(-3);
+            Tank.setRightMotorPWM(-3);
+            y = Enes100.getY();
+        }
     }
     Tank.setLeftMotorPWM(0);
     Tank.setRightMotorPWM(0);
-    while (abs(y - desired) > 0.001){
-        Tank.setLeftMotorPWM(-3);
-        Tank.setRightMotorPWM(-3);
-        y = Enes100.getY();
-    }
     Tank.setLeftMotorPWM(0);
     Tank.setRightMotorPWM(0);
+}
+
+float getShortestTurn(float t, float degree){
+    float diff;
+    diff = degree - t;
+    if (diff > PI) {
+        diff -= 2.0 * PI;
+    } else if (diff <= -1*PI) {
+        diff += 2.0 * PI;
+    }
+    return diff;
 }
