@@ -3,221 +3,230 @@
 #include "Tank.h"
 
 // Front facing ultrasonic
-const FRONT_ULTRASONIC_VCC = 0;
-const FRONT_ULTRASONIC_ECHO = 1;
-const FRONT_ULTRASONIC_TRIG = 2;
-const FRONT_ULTRASONIC_GND = 3;
-// Downward facing ultrasonic
-const DOWN_ULTRASONIC_VCC = 0;
-const DOWN_ULTRASONIC_ECHO = 1;
-const DOWN_ULTRASONIC_TRIG = 2;
-const DOWN_ULTRASONIC_GND = 3;
-// Limit switch 1
-const LIMIT1 = 0;
-const LIMIT1_GND = 1;
-// Limit switch 2
-const LIMIT2 = 0;
-const LIMIT2_GND = 1;
-// Limit switch 3
-const LIMIT3 = 0;
-const LIMIT3_GND = 1;
-// Camera
-const CAM = 0;
-const CAM_GND = 1;
+// const FRONT_ULTRASONIC_VCC = 0;
+// const FRONT_ULTRASONIC_ECHO = 1;
+// const FRONT_ULTRASONIC_TRIG = 2;
+// const FRONT_ULTRASONIC_GND = 3;
+// // Downward facing ultrasonic
+// const DOWN_ULTRASONIC_VCC = 0;
+// const DOWN_ULTRASONIC_ECHO = 1;
+// const DOWN_ULTRASONIC_TRIG = 2;
+// const DOWN_ULTRASONIC_GND = 3;
+// // Limit switch 1
+// const LIMIT1 = 0;
+// const LIMIT1_GND = 1;
+// // Limit switch 2
+// const LIMIT2 = 0;
+// const LIMIT2_GND = 1;
+// // Limit switch 3
+// const LIMIT3 = 0;
+// const LIMIT3_GND = 1;
+// // Camera
+// const CAM = 0;
+// const CAM_GND = 1;
 // H-Bridge 1
 // H-Bridge 2
 
 // Ultrasonic measurements
 long duration, cm, inches, waterDistance;
+int trigPin = 11;    // Trigger
+int echoPin = 12;    // Echo
+
 
 float x, y, t;
 void setup() {
-    Enes100.begin("H2GO", WATER, 13, 1120, 52, 50);
-    Tank.begin();
-     Enes100.println("Connected...");
-    Enes100.println("Starting driving");
-    Enes100.print("X = "); Enes100.println(Enes100.getX());
-    Enes100.print("Y = "); Enes100.println(Enes100.getY());
-    Enes100.print("Theta = "); Enes100.println(Enes100.getTheta());
-    t = Enes100.getTheta(); 
-    x = Enes100.getX();
-    y = Enes100.getY();
+  // Enes100.begin("H2GO", WATER, 13, 1120, 52, 50);
+  // Tank.begin();
+  //  Enes100.println("Connected...");
+  // Enes100.println("Starting driving");
+  // Enes100.print("X = "); Enes100.println(Enes100.getX());
+  // Enes100.print("Y = "); Enes100.println(Enes100.getY());
+  // Enes100.print("Theta = "); Enes100.println(Enes100.getTheta());
+  // t = Enes100.getTheta();
+  // x = Enes100.getX();
+  // y = Enes100.getY();
 
-// Set up ultrasonic
-    Serial.begin (9600);
-    pinMode(trigPin, OUTPUT);
-    pinMode(echoPin, INPUT);
+  // Set up ultrasonic
+  Serial.begin(9600);
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+  // Serial.println("setup");
 
-
-    if (y > 1){
-        goToY(0.55);
-        //mission();
-        reverseY(0.25);
-    } else {
-        goToY(1.45);
-        //mission();
-        reverseY(0.25);
-    }
-    goToX(1);
-    goToY(1.88);
-    goToX(3);
-    goToY(1.6);
-    goToX(3.75);
+  // if (y > 1){
+  //     goToY(0.55);
+  //     //mission();
+  //     reverseY(0.25);
+  // } else {
+  //     goToY(1.45);
+  //     //mission();
+  //     reverseY(0.25);
+  // }
+  // goToX(1);
+  // goToY(1.88);
+  // goToX(3);
+  // goToY(1.6);
+  // goToX(3.75);
 }
 
 void loop() {
-    delay(100);
+  // Serial.println("loop");
+  startUltrasonic();
+  delay(100);
 }
 
-void turn(float degree){
-    float d;
-    d = getShortestTurn(t, degree);
-    if (d > 0){
-        while (abs(degree - t) > .1) {
-            Tank.setLeftMotorPWM(-31);
-            Tank.setRightMotorPWM(31);
-            t = Enes100.getTheta();
-        }
-        Tank.setLeftMotorPWM(0);
-        Tank.setRightMotorPWM(0);
-        while (abs(degree - t) > .001) {
-            Tank.setLeftMotorPWM(-3);
-            Tank.setRightMotorPWM(3);
-            t = Enes100.getTheta();
-        }
-        Tank.setLeftMotorPWM(0);
-        Tank.setRightMotorPWM(0);
-    } else {
-        while (abs(degree - t) > .1) {
-            Tank.setLeftMotorPWM(31);
-            Tank.setRightMotorPWM(-31);
-            t = Enes100.getTheta();
-        }
-        Tank.setLeftMotorPWM(0);
-        Tank.setRightMotorPWM(0);
-        while (abs(degree - t) > .001) {
-            Tank.setLeftMotorPWM(3);
-            Tank.setRightMotorPWM(-3);
-            t = Enes100.getTheta();
-        }
-        Tank.setLeftMotorPWM(0);
-        Tank.setRightMotorPWM(0);
+void turn(float degree) {
+  float d;
+  d = getShortestTurn(t, degree);
+  if (d > 0) {
+    while (abs(degree - t) > .1) {
+      Tank.setLeftMotorPWM(-31);
+      Tank.setRightMotorPWM(31);
+      t = Enes100.getTheta();
     }
+    Tank.setLeftMotorPWM(0);
+    Tank.setRightMotorPWM(0);
+    while (abs(degree - t) > .001) {
+      Tank.setLeftMotorPWM(-3);
+      Tank.setRightMotorPWM(3);
+      t = Enes100.getTheta();
+    }
+    Tank.setLeftMotorPWM(0);
+    Tank.setRightMotorPWM(0);
+  } else {
+    while (abs(degree - t) > .1) {
+      Tank.setLeftMotorPWM(31);
+      Tank.setRightMotorPWM(-31);
+      t = Enes100.getTheta();
+    }
+    Tank.setLeftMotorPWM(0);
+    Tank.setRightMotorPWM(0);
+    while (abs(degree - t) > .001) {
+      Tank.setLeftMotorPWM(3);
+      Tank.setRightMotorPWM(-3);
+      t = Enes100.getTheta();
+    }
+    Tank.setLeftMotorPWM(0);
+    Tank.setRightMotorPWM(0);
+  }
 }
 
-void goToY(float Y){
-    if (Y > y) {
-        turn(HALF_PI);
-    } else {
-        turn(-1*HALF_PI);
-    }
-    while (abs(Y - y) > .05){
-        Tank.setLeftMotorPWM(31);
-        Tank.setRightMotorPWM(31);
-        y = Enes100.getY();
-    }
-    Tank.setLeftMotorPWM(0);
-    Tank.setRightMotorPWM(0);
-    while (abs(Y - y) > 0.001){
-        Tank.setLeftMotorPWM(3);
-        Tank.setRightMotorPWM(3);
-        y = Enes100.getY();
-    }
-    Tank.setLeftMotorPWM(0);
-    Tank.setRightMotorPWM(0);
+void goToY(float Y) {
+  if (Y > y) {
+    turn(HALF_PI);
+  } else {
+    turn(-1 * HALF_PI);
+  }
+  while (abs(Y - y) > .05) {
+    Tank.setLeftMotorPWM(31);
+    Tank.setRightMotorPWM(31);
+    y = Enes100.getY();
+  }
+  Tank.setLeftMotorPWM(0);
+  Tank.setRightMotorPWM(0);
+  while (abs(Y - y) > 0.001) {
+    Tank.setLeftMotorPWM(3);
+    Tank.setRightMotorPWM(3);
+    y = Enes100.getY();
+  }
+  Tank.setLeftMotorPWM(0);
+  Tank.setRightMotorPWM(0);
 }
 
-void goToX(float X){
-    if (X > x) {
-        turn(0);
-    } else {
-        turn(PI);
-    }
-    while (abs(X - x) > .05){
-        Tank.setLeftMotorPWM(31);
-        Tank.setRightMotorPWM(31);
-        x = Enes100.getX();
-    }
-    Tank.setLeftMotorPWM(0);
-    Tank.setRightMotorPWM(0);
-    while (abs(X - x) > 0.001){
-        Tank.setLeftMotorPWM(3);
-        Tank.setRightMotorPWM(3);
-        x = Enes100.getX();
-    }
-    Tank.setLeftMotorPWM(0);
-    Tank.setRightMotorPWM(0);
+void goToX(float X) {
+  if (X > x) {
+    turn(0);
+  } else {
+    turn(PI);
+  }
+  while (abs(X - x) > .05) {
+    Tank.setLeftMotorPWM(31);
+    Tank.setRightMotorPWM(31);
+    x = Enes100.getX();
+  }
+  Tank.setLeftMotorPWM(0);
+  Tank.setRightMotorPWM(0);
+  while (abs(X - x) > 0.001) {
+    Tank.setLeftMotorPWM(3);
+    Tank.setRightMotorPWM(3);
+    x = Enes100.getX();
+  }
+  Tank.setLeftMotorPWM(0);
+  Tank.setRightMotorPWM(0);
 }
 
-void reverseY(float dist){
-    float desired;
-    if (t > 0){
-        desired = y - dist;
-        while (abs(y - desired) > .05){
-            Tank.setLeftMotorPWM(-31);
-            Tank.setRightMotorPWM(-31);
-            y = Enes100.getY();
-        }
-        Tank.setLeftMotorPWM(0);
-        Tank.setRightMotorPWM(0);
-        while (abs(y - desired) > 0.001){
-            Tank.setLeftMotorPWM(-3);
-            Tank.setRightMotorPWM(-3);
-            y = Enes100.getY();
-        }
-    } else {
-        desired = y + dist;
-        while (abs(y - desired) > .05){
-            Tank.setLeftMotorPWM(-31);
-            Tank.setRightMotorPWM(-31);
-            y = Enes100.getY();
-        }  
-        Tank.setLeftMotorPWM(0);
-        Tank.setRightMotorPWM(0);
-        while (abs(y - desired) > 0.001){
-            Tank.setLeftMotorPWM(-3);
-            Tank.setRightMotorPWM(-3);
-            y = Enes100.getY();
-        }
+void reverseY(float dist) {
+  float desired;
+  if (t > 0) {
+    desired = y - dist;
+    while (abs(y - desired) > .05) {
+      Tank.setLeftMotorPWM(-31);
+      Tank.setRightMotorPWM(-31);
+      y = Enes100.getY();
     }
     Tank.setLeftMotorPWM(0);
     Tank.setRightMotorPWM(0);
+    while (abs(y - desired) > 0.001) {
+      Tank.setLeftMotorPWM(-3);
+      Tank.setRightMotorPWM(-3);
+      y = Enes100.getY();
+    }
+  } else {
+    desired = y + dist;
+    while (abs(y - desired) > .05) {
+      Tank.setLeftMotorPWM(-31);
+      Tank.setRightMotorPWM(-31);
+      y = Enes100.getY();
+    }
     Tank.setLeftMotorPWM(0);
     Tank.setRightMotorPWM(0);
+    while (abs(y - desired) > 0.001) {
+      Tank.setLeftMotorPWM(-3);
+      Tank.setRightMotorPWM(-3);
+      y = Enes100.getY();
+    }
+  }
+  Tank.setLeftMotorPWM(0);
+  Tank.setRightMotorPWM(0);
+  Tank.setLeftMotorPWM(0);
+  Tank.setRightMotorPWM(0);
 }
 
-void startUltrasonic(){
-    // Short low pulse
-  digitalWrite(DOWN_ULTRASONIC_TRIG, LOW);
+void startUltrasonic() {
+  // Short low pulse
+  digitalWrite(trigPin, LOW);
   delayMicroseconds(5);
-  digitalWrite(DOWN_ULTRASONIC_TRIG, HIGH);
+  digitalWrite(trigPin, HIGH);
   delayMicroseconds(10);
-  digitalWrite(DOWN_ULTRASONIC_TRIG, LOW);
- 
+  digitalWrite(trigPin, LOW);
+
   // Read signal
-  pinMode(DOWN_ULTRASONIC_ECHO, INPUT);
-  duration = pulseIn(DOWN_ULTRASONIC_ECHO, HIGH);
+  pinMode(echoPin, INPUT);
+  duration = pulseIn(echoPin, HIGH);
 
-cm = (duration/2) / 29.1;     // Convert to cm
+  cm = (duration / 2) / 29.1;  // Convert to cm
 
-// 9.35 distance
-waterDistance = 9.35 - cm;
+  // 9.35 distance
+  waterDistance = 9.35 - cm;
 
-int 20range = abs(20 - waterDistance);
-int 30range = abs(30 - waterDistance);
-int 40range = abs(40 - waterDistance);
+  int range20 = abs(2.0 - waterDistance);
+  int range30 = abs(3.0 - waterDistance);
+  int range40 = abs(4.0 - waterDistance);
 
-if (20range < 30range && 20range < 40range) {
-Enes100.mission(DEPTH, 20);
-} else if (30range < 20range && 30range < 40range) {
-Enes100.mission(DEPTH, 30);
-} else {
-Enes100.mission(DEPTH, 40);
-}
+  // Serial.println("Working");
+  if (range20 < range30 && range20 < range40) {
+    Enes100.mission(DEPTH, 20);
+    Serial.println("20");
+  } else if (range30 < range20 && range30 < range40) {
+    Enes100.mission(DEPTH, 30);
+    Serial.println("30");
+  } else {
+    Enes100.mission(DEPTH, 40);
+    Serial.println("40");
+  }
 
 
-  
-   
+
+
 
   // inches = (duration/2) / 74;   // Convert to inches
   // Serial.print(inches);
@@ -226,19 +235,15 @@ Enes100.mission(DEPTH, 40);
   Serial.print("cm");
   Serial.println();
   delay(250);
-
-
-
 }
 
-float getShortestTurn(float t, float degree){
-    float diff;
-    diff = degree - t;
-    if (diff > PI) {
-        diff -= 2.0 * PI;
-    } else if (diff <= -1*PI) {
-        diff += 2.0 * PI;
-    }
-    return diff;
+float getShortestTurn(float t, float degree) {
+  float diff;
+  diff = degree - t;
+  if (diff > PI) {
+    diff -= 2.0 * PI;
+  } else if (diff <= -1 * PI) {
+    diff += 2.0 * PI;
+  }
+  return diff;
 }
-
