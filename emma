@@ -28,7 +28,7 @@ const CAM_GND = 1;
 // H-Bridge 2
 
 // Ultrasonic measurements
-long duration, cm, inches;
+long duration, cm, inches, waterDistance;
 
 float x, y, t;
 void setup() {
@@ -197,15 +197,37 @@ void startUltrasonic(){
   // Read signal
   pinMode(DOWN_ULTRASONIC_ECHO, INPUT);
   duration = pulseIn(DOWN_ULTRASONIC_ECHO, HIGH);
- 
-  cm = (duration/2) / 29.1;     // Convert to cm
-  inches = (duration/2) / 74;   // Convert to inches
-  Serial.print(inches);
-  Serial.print("in, ");
+
+cm = (duration/2) / 29.1;     // Convert to cm
+
+// 9.35 distance
+waterDistance = 9.35 - cm;
+
+int 20range = abs(20 - waterDistance);
+int 30range = abs(30 - waterDistance);
+int 40range = abs(40 - waterDistance);
+
+if (20range < 30range && 20range < 40range) {
+Enes100.mission(DEPTH, 20);
+} else if (30range < 20range && 30range < 40range) {
+Enes100.mission(DEPTH, 30);
+} else {
+Enes100.mission(DEPTH, 40);
+}
+
+
+  
+   
+
+  // inches = (duration/2) / 74;   // Convert to inches
+  // Serial.print(inches);
+  // Serial.print("in, ");
   Serial.print(cm);
   Serial.print("cm");
   Serial.println();
   delay(250);
+
+
 
 }
 
