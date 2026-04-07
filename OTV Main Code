@@ -1,19 +1,25 @@
 #include "Arduino.h"
 #include "Enes100.h"
 
-//Motor Assignment
+//Motor Assignments
 int PIN_MOTOR_1_FORWARD = 11;
 int PIN_MOTOR_1_REVERSE = 10;
+//int PIN_MOTOR_1_SPEED = PLACEHOLDER;
 int PIN_MOTOR_2_FORWARD = 9;
 int PIN_MOTOR_2_REVERSE = 8;
-//Ultrasonic Assignment
+//int PIN_MOTOR_2_SPEED = PLACEHOLDER;
+//Ultrasonic Assignments
 int PIN_US_FRONT_TRIG = 18;
 int PIN_US_FRONT_ECHO = 19;
 int PIN_US_MISSION_TRIG = 27;
 int PIN_US_MISSION_ECHO = 26;
-// WiFi Modules
+// WiFi Module
 int PIN_WIFI_TX = 52;
 int PIN_WIFI_RX = 50;
+// Limit Switch
+//int TOP_SW = PLACEHOLDER;
+//int BOTTOM_SW = PLACEHOLDER;
+//int FRONT_SW = PLACEHOLDER;
 // PWM Speeds
 int fastSpeed = 63;
 int medSpeed = 50;
@@ -132,8 +138,8 @@ void goToX(float X){
     H2GoStopMotors();
     // Moves more accurately to the desired location
     while (abs(X - x) > 0.001){
-        H2GoSetLeftPWM(7);
-        H2GoSetRightPWM(7);
+        H2GoSetLeftPWM(slowSpeed);
+        H2GoSetRightPWM(slowSpeed);
         x = Enes100.getX();
     }
     H2GoStopMotors();
@@ -212,16 +218,31 @@ void H2GoSetMotorPWM(int motorId, int pwm){ // Adapted from tank startup
 
     int forward_pin;
     int reverse_pin;
+    int speed_pin;
     
     // Get pins to use
     if (motorId == 1) {
         forward_pin = PIN_MOTOR_1_FORWARD;
         reverse_pin = PIN_MOTOR_1_REVERSE;
+        speed_pin = PIN_MOTOR_1_SPEED;
     }
     else if (motorId == 2) {
         forward_pin = PIN_MOTOR_2_FORWARD;
         reverse_pin = PIN_MOTOR_2_REVERSE;
+        speed_pin = PIN_MOTOR_2_SPEED;
+
     }
+    // Set pin PWM and GND
+    if (pwm >= 0) {
+        digitalWrite(forward_pin, HIGH);
+        digitalWrite(reverse_pin, LOW);
+        analogWrite(speed_pin, abs(pwm));
+    }
+    else {
+        digitalWrite(forward_pin, LOW);
+        digitalWrite(reverse_pin, HIGH)
+        analogWrite(speed_pin, abs(pwm));
+    } 
 }
 
 void H2GoStopMotors(){ // Adapted from tank startup
@@ -264,4 +285,34 @@ float H2GoReadDistanceSensor(int sensorId) { // Adapted from tank startup
     if (duration < 20000 && duration > 0) {
         return min(duration * .0001715, 1);
     } else return -1;
-};
+}
+
+void H2GoMeasureWater() {
+  cm = H2GoReadDistanceSensor(7)*100;  // Convert to cm
+
+  // 9.35 distance
+  waterDistance = 9.35 - cm;
+
+  int range20 = abs(2.0 - waterDistance);
+  int range30 = abs(3.0 - waterDistance);
+  int range40 = abs(4.0 - waterDistance);
+
+  // Serial.println("Working");
+  if (range20 < range30 && range20 < range40) {
+    Enes100.mission(DEPTH, 20);
+    Serial.println("20");
+  } else if (range30 < range20 && range30 < range40) {
+    Enes100.mission(DEPTH, 30);
+    Serial.println("30");
+  } else {
+    Enes100.mission(DEPTH, 40);
+    Serial.println("40");
+  }
+  // inches = (duration/2) / 74;   // Convert to inches
+  // Serial.print(inches);
+  // Serial.print("in, ");
+  Serial.print(cm);
+  Serial.print("cm");
+  Serial.println();
+  delay(250);
+}
