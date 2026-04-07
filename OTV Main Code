@@ -4,10 +4,10 @@
 //Motor Assignments
 int PIN_MOTOR_1_FORWARD = 11;
 int PIN_MOTOR_1_REVERSE = 10;
-//int PIN_MOTOR_1_SPEED = PLACEHOLDER;
+int PIN_MOTOR_1_SPEED = 31;
 int PIN_MOTOR_2_FORWARD = 9;
 int PIN_MOTOR_2_REVERSE = 8;
-//int PIN_MOTOR_2_SPEED = PLACEHOLDER;
+int PIN_MOTOR_2_SPEED = 32;
 //Ultrasonic Assignments
 int PIN_US_FRONT_TRIG = 18;
 int PIN_US_FRONT_ECHO = 19;
@@ -28,267 +28,267 @@ int slowSpeed = 15;
 float x, y, t;
 
 void setup() {
-    Enes100.begin("H2Go", WATER, 13, 1120, 52, 50);
-    H2GoBegin();
-    Enes100.println("Starting driving");
-    Enes100.print("X = "); Enes100.println(Enes100.getX());
-    Enes100.print("Y = "); Enes100.println(Enes100.getY());
-    Enes100.print("Theta = "); Enes100.println(Enes100.getTheta());
-    t = Enes100.getTheta(); 
-    x = Enes100.getX();
-    y = Enes100.getY();
-    if (y > 1){
-        goToY(0.55);
-        //mission();
-        reverseY(0.25);
-    } else {
-        goToY(1.45);
-        //mission();
-        reverseY(0.25);
-    }
-    goToX(1);
-    goToY(1.88);
-    goToX(3);
-    goToY(1.6);
-    goToX(3.75);
+  Enes100.begin("H2Go", WATER, 13, 1120, 52, 50);
+  H2GoBegin();
+  Enes100.println("Starting driving");
+  Enes100.print("X = ");
+  Enes100.println(Enes100.getX());
+  Enes100.print("Y = ");
+  Enes100.println(Enes100.getY());
+  Enes100.print("Theta = ");
+  Enes100.println(Enes100.getTheta());
+  t = Enes100.getTheta();
+  x = Enes100.getX();
+  y = Enes100.getY();
+  if (y > 1) {
+    goToY(0.55);
+    //mission();
+    reverseY(0.25);
+  } else {
+    goToY(1.45);
+    //mission();
+    reverseY(0.25);
+  }
+  goToX(1);
+  goToY(1.88);
+  goToX(3);
+  goToY(1.6);
+  goToX(3.75);
 }
 
 void loop() {
-    delay(100);
+  delay(100);
 }
 
-void turn(float degree){
-    float d;
-    d = getShortestTurn(t, degree);
-    // Turns left if the shortest distance is left, otherwise turns right
-    if (d > 0){
-        while (abs(degree - t) > .1) {
-            H2GoSetLeftPWM(-fastSpeed);
-            H2GoSetRightPWM(fastSpeed);
-            t = Enes100.getTheta();
-        }
-        H2GoStopMotors();
-        Enes100.print("Fast");
-        // Slowing down as we approach the desired angle
-        while (abs(degree - t) > .001) {
-            H2GoSetLeftPWM(-slowSpeed);
-            H2GoSetRightPWM(slowSpeed);
-            t = Enes100.getTheta();
-        }
-        H2GoStopMotors();
-        Enes100.print("Slow");
-    } else {
-        while (abs(degree - t) > .1) {
-            H2GoSetLeftPWM(fastSpeed);
-            H2GoSetRightPWM(-fastSpeed);
-            t = Enes100.getTheta();
-        }
-        H2GoStopMotors();
-        Enes100.print("Fast");
-        // Slowing down as we approach the desired angle
-        while (abs(degree - t) > .001) {
-            H2GoSetLeftPWM(slowSpeed);
-            H2GoSetRightPWM(-slowSpeed);
-            t = Enes100.getTheta();
-        }
-        H2GoStopMotors();
-        Enes100.print("Slow");
+void turn(float degree) {
+  float d;
+  d = getShortestTurn(t, degree);
+  // Turns left if the shortest distance is left, otherwise turns right
+  if (d > 0) {
+    while (abs(degree - t) > .1) {
+      H2GoSetLeftPWM(-fastSpeed);
+      H2GoSetRightPWM(fastSpeed);
+      t = Enes100.getTheta();
     }
+    H2GoStopMotors();
+    Enes100.print("Fast");
+    // Slowing down as we approach the desired angle
+    while (abs(degree - t) > .001) {
+      H2GoSetLeftPWM(-slowSpeed);
+      H2GoSetRightPWM(slowSpeed);
+      t = Enes100.getTheta();
+    }
+    H2GoStopMotors();
+    Enes100.print("Slow");
+  } else {
+    while (abs(degree - t) > .1) {
+      H2GoSetLeftPWM(fastSpeed);
+      H2GoSetRightPWM(-fastSpeed);
+      t = Enes100.getTheta();
+    }
+    H2GoStopMotors();
+    Enes100.print("Fast");
+    // Slowing down as we approach the desired angle
+    while (abs(degree - t) > .001) {
+      H2GoSetLeftPWM(slowSpeed);
+      H2GoSetRightPWM(-slowSpeed);
+      t = Enes100.getTheta();
+    }
+    H2GoStopMotors();
+    Enes100.print("Slow");
+  }
 }
 
-void goToY(float Y){
-    // Determines whether the desired Y is above or below the current y, turns appropriately
-    if (Y > y) {
-        turn(HALF_PI);
-        Enes100.print("Turned?");
-    } else {
-        turn(-1*HALF_PI);
-        Enes100.print("ReverseTurned?");
-    }
-    Enes100.print("Got Here");
-    // Moves towards the desired y value until it gets close
-    while (abs(Y - y) > .05){
-        H2GoSetLeftPWM(fastSpeed);
-        H2GoSetRightPWM(fastSpeed);
-        y = Enes100.getY();
+void goToY(float Y) {
+  // Determines whether the desired Y is above or below the current y, turns appropriately
+  if (Y > y) {
+    turn(HALF_PI);
+    Enes100.print("Turned?");
+  } else {
+    turn(-1 * HALF_PI);
+    Enes100.print("ReverseTurned?");
+  }
+  Enes100.print("Got Here");
+  // Moves towards the desired y value until it gets close
+  while (abs(Y - y) > .05) {
+    H2GoSetLeftPWM(fastSpeed);
+    H2GoSetRightPWM(fastSpeed);
+    y = Enes100.getY();
+  }
+  H2GoStopMotors();
+  // Moves more accurately to the desired location
+  while (abs(Y - y) > 0.001) {
+    H2GoSetLeftPWM(slowSpeed);
+    H2GoSetRightPWM(slowSpeed);
+    y = Enes100.getY();
+  }
+  H2GoStopMotors();
+}
+
+void goToX(float X) {
+  // Determines whether the desired X is above or below the current x, turns appropriately
+  if (X > x) {
+    turn(0);
+  } else {
+    turn(PI);
+  }
+  // Moves towards a desired x value until it gets close
+  while (abs(X - x) > .05) {
+    H2GoSetLeftPWM(fastSpeed);
+    H2GoSetRightPWM(fastSpeed);
+    x = Enes100.getX();
+  }
+  H2GoStopMotors();
+  // Moves more accurately to the desired location
+  while (abs(X - x) > 0.001) {
+    H2GoSetLeftPWM(slowSpeed);
+    H2GoSetRightPWM(slowSpeed);
+    x = Enes100.getX();
+  }
+  H2GoStopMotors();
+}
+
+void reverseY(float dist) {
+  float desired;
+  // Determines whether we want to reverse to the top or the bottom of the map
+  if (t > 0) {
+    desired = y - dist;
+    // Reversing to the desired direction
+    while (abs(y - desired) > .05) {
+      H2GoSetLeftPWM(-fastSpeed);
+      H2GoSetRightPWM(-fastSpeed);
+      y = Enes100.getY();
     }
     H2GoStopMotors();
     // Moves more accurately to the desired location
-    while (abs(Y - y) > 0.001){
-        H2GoSetLeftPWM(slowSpeed);
-        H2GoSetRightPWM(slowSpeed);
-        y = Enes100.getY();
+    while (abs(y - desired) > 0.001) {
+      H2GoSetLeftPWM(-slowSpeed);
+      H2GoSetRightPWM(-slowSpeed);
+      y = Enes100.getY();
     }
-    H2GoStopMotors();
-}
-
-void goToX(float X){
-    // Determines whether the desired X is above or below the current x, turns appropriately
-    if (X > x) {
-        turn(0);
-    } else {
-        turn(PI);
-    }
-    // Moves towards a desired x value until it gets close
-    while (abs(X - x) > .05){
-        H2GoSetLeftPWM(fastSpeed);
-        H2GoSetRightPWM(fastSpeed);
-        x = Enes100.getX();
+  } else {
+    desired = y + dist;
+    // Reversing to the desired direction
+    while (abs(y - desired) > .05) {
+      H2GoSetLeftPWM(-fastSpeed);
+      H2GoSetRightPWM(-fastSpeed);
+      y = Enes100.getY();
     }
     H2GoStopMotors();
     // Moves more accurately to the desired location
-    while (abs(X - x) > 0.001){
-        H2GoSetLeftPWM(slowSpeed);
-        H2GoSetRightPWM(slowSpeed);
-        x = Enes100.getX();
+    while (abs(y - desired) > 0.001) {
+      H2GoSetLeftPWM(-slowSpeed);
+      H2GoSetRightPWM(-slowSpeed);
+      y = Enes100.getY();
     }
-    H2GoStopMotors();
+  }
+  H2GoStopMotors();
 }
 
-void reverseY(float dist){
-    float desired;
-    // Determines whether we want to reverse to the top or the bottom of the map
-    if (t > 0){
-        desired = y - dist;
-        // Reversing to the desired direction
-        while (abs(y - desired) > .05){
-            H2GoSetLeftPWM(-fastSpeed);
-            H2GoSetRightPWM(-fastSpeed);
-            y = Enes100.getY();
-        }
-        H2GoStopMotors();
-        // Moves more accurately to the desired location
-        while (abs(y - desired) > 0.001){
-            H2GoSetLeftPWM(-slowSpeed);
-            H2GoSetRightPWM(-slowSpeed);
-            y = Enes100.getY();
-        }
-    } else {
-        desired = y + dist;
-        // Reversing to the desired direction
-        while (abs(y - desired) > .05){
-            H2GoSetLeftPWM(-fastSpeed);
-            H2GoSetRightPWM(-fastSpeed);
-            y = Enes100.getY();
-        }  
-        H2GoStopMotors();
-        // Moves more accurately to the desired location
-        while (abs(y - desired) > 0.001){
-            H2GoSetLeftPWM(-slowSpeed);
-            H2GoSetRightPWM(-slowSpeed);
-            y = Enes100.getY();
-        }
-    }
-    H2GoStopMotors();
+float getShortestTurn(float t, float degree) {
+  float diff;
+  diff = degree - t;
+  // Determines whether the shortest turn is left or right
+  if (diff > PI) {
+    diff -= 2.0 * PI;
+  } else if (diff <= -1 * PI) {
+    diff += 2.0 * PI;
+  }
+  return diff;
 }
 
-float getShortestTurn(float t, float degree){
-    float diff;
-    diff = degree - t;
-    // Determines whether the shortest turn is left or right
-    if (diff > PI) {
-        diff -= 2.0 * PI;
-    } else if (diff <= -1*PI) {
-        diff += 2.0 * PI;
-    }
-    return diff;
+void H2GoBegin() {  // Adapted from tank startup
+  // Motor Initialize
+  pinMode(PIN_MOTOR_1_FORWARD, OUTPUT);
+  pinMode(PIN_MOTOR_1_REVERSE, OUTPUT);
+  pinMode(PIN_MOTOR_2_FORWARD, OUTPUT);
+  pinMode(PIN_MOTOR_2_REVERSE, OUTPUT);
+  // Ultrasonic Sensors
+  pinMode(PIN_US_FRONT_TRIG, OUTPUT);
+  pinMode(PIN_US_FRONT_ECHO, INPUT);
+  pinMode(PIN_US_MISSION_TRIG, OUTPUT);
+  pinMode(PIN_US_MISSION_ECHO, INPUT);
 }
 
-void H2GoBegin(){ // Adapted from tank startup
-    // Motor Initialize
-    pinMode(PIN_MOTOR_1_FORWARD, OUTPUT);
-    pinMode(PIN_MOTOR_1_REVERSE, OUTPUT);
-    pinMode(PIN_MOTOR_2_FORWARD, OUTPUT);
-    pinMode(PIN_MOTOR_2_REVERSE, OUTPUT);
-    // Ultrasonic Sensors
-    pinMode(PIN_US_FRONT_TRIG, OUTPUT);
-    pinMode(PIN_US_FRONT_ECHO, INPUT);
-    pinMode(PIN_US_MISSION_TRIG, OUTPUT);
-    pinMode(PIN_US_MISSION_ECHO, INPUT);
+void H2GoSetMotorPWM(int motorId, int pwm) {  // Adapted from tank startup
+  if (pwm > 255) {
+    pwm = 255;
+  } else if (pwm < -255) {
+    pwm = -255;
+  }
+  // Verify motorId
+  if (motorId < 1 || motorId > 2) { return; }
+
+  int forward_pin;
+  int reverse_pin;
+  int speed_pin;
+
+  // Get pins to use
+  if (motorId == 1) {
+    forward_pin = PIN_MOTOR_1_FORWARD;
+    reverse_pin = PIN_MOTOR_1_REVERSE;
+    speed_pin = PIN_MOTOR_1_SPEED;
+  } else if (motorId == 2) {
+    forward_pin = PIN_MOTOR_2_FORWARD;
+    reverse_pin = PIN_MOTOR_2_REVERSE;
+    speed_pin = PIN_MOTOR_2_SPEED;
+  }
+  // Set pin PWM and GND
+  if (pwm >= 0) {
+    digitalWrite(forward_pin, HIGH);
+    digitalWrite(reverse_pin, LOW);
+    analogWrite(speed_pin, abs(pwm));
+  } else {
+    digitalWrite(forward_pin, LOW);
+    digitalWrite(reverse_pin, HIGH);
+    analogWrite(speed_pin, abs(pwm));
+  }
 }
 
-void H2GoSetMotorPWM(int motorId, int pwm){ // Adapted from tank startup
-    if (pwm > 255) {
-        pwm = 255;
-    } else if (pwm < -255){
-        pwm = -255;
-    }
-        // Verify motorId
-    if (motorId < 1 || motorId > 2) {return;}
-
-    int forward_pin;
-    int reverse_pin;
-    int speed_pin;
-    
-    // Get pins to use
-    if (motorId == 1) {
-        forward_pin = PIN_MOTOR_1_FORWARD;
-        reverse_pin = PIN_MOTOR_1_REVERSE;
-        speed_pin = PIN_MOTOR_1_SPEED;
-    }
-    else if (motorId == 2) {
-        forward_pin = PIN_MOTOR_2_FORWARD;
-        reverse_pin = PIN_MOTOR_2_REVERSE;
-        speed_pin = PIN_MOTOR_2_SPEED;
-
-    }
-    // Set pin PWM and GND
-    if (pwm >= 0) {
-        digitalWrite(forward_pin, HIGH);
-        digitalWrite(reverse_pin, LOW);
-        analogWrite(speed_pin, abs(pwm));
-    }
-    else {
-        digitalWrite(forward_pin, LOW);
-        digitalWrite(reverse_pin, HIGH)
-        analogWrite(speed_pin, abs(pwm));
-    } 
+void H2GoStopMotors() {  // Adapted from tank startup
+  H2GoSetMotorPWM(1, 0);
+  H2GoSetMotorPWM(2, 0);
 }
 
-void H2GoStopMotors(){ // Adapted from tank startup
-    H2GoSetMotorPWM(1, 0);
-    H2GoSetMotorPWM(2, 0);
+void H2GoSetLeftPWM(int pwm) {  // Adapted from tank startup
+  H2GoSetMotorPWM(1, pwm);
 }
 
-void H2GoSetLeftPWM(int pwm){ // Adapted from tank startup
-    H2GoSetMotorPWM(1, pwm);
+void H2GoSetRightPWM(int pwm) {  // Adapted from tank startup
+  H2GoSetMotorPWM(2, pwm);
 }
 
-void H2GoSetRightPWM(int pwm){ // Adapted from tank startup
-    H2GoSetMotorPWM(2, pwm);
-}
+float H2GoReadDistanceSensor(int sensorId) {  // Adapted from tank startup
+  // Verify sensorId
+  if (sensorId != 1 && sensorId != 7) { return -1; }
 
-float H2GoReadDistanceSensor(int sensorId) { // Adapted from tank startup
-    // Verify sensorId
-    if (sensorId != 1 && sensorId != 7) {return -1;}
+  int trig_pin;
+  int echo_pin;
 
-    int trig_pin;
-    int echo_pin;
+  // Get pin to use
+  if (sensorId == 1) {
+    trig_pin = PIN_US_FRONT_TRIG;
+    echo_pin = PIN_US_FRONT_ECHO;
+  } else {
+    trig_pin = PIN_US_MISSION_TRIG;
+    echo_pin = PIN_US_MISSION_ECHO;
+  }
 
-    // Get pin to use
-    if (sensorId == 1) {
-        trig_pin = PIN_US_FRONT_TRIG;
-        echo_pin = PIN_US_FRONT_ECHO;
-    }
-    else {
-        trig_pin = PIN_US_MISSION_TRIG;
-        echo_pin = PIN_US_MISSION_ECHO;
-    }
-
-    // Trigger and read the distance sensor
-    digitalWrite(trig_pin, 0);
-    delayMicroseconds(2);
-    digitalWrite(trig_pin, 1);
-    delayMicroseconds(10);
-    digitalWrite(trig_pin, 0);
-    int duration = pulseIn(echo_pin, 1);
-    if (duration < 20000 && duration > 0) {
-        return min(duration * .0001715, 1);
-    } else return -1;
+  // Trigger and read the distance sensor
+  digitalWrite(trig_pin, 0);
+  delayMicroseconds(2);
+  digitalWrite(trig_pin, 1);
+  delayMicroseconds(10);
+  digitalWrite(trig_pin, 0);
+  int duration = pulseIn(echo_pin, 1);
+  if (duration < 20000 && duration > 0) {
+    return min(duration * .0001715, 1);
+  } else return -1;
 }
 
 void H2GoMeasureWater() {
-  cm = H2GoReadDistanceSensor(7)*100;  // Convert to cm
+  float cm, waterDistance;
+  cm = H2GoReadDistanceSensor(7) * 100;  // Convert to cm
 
   // 9.35 distance
   waterDistance = 9.35 - cm;
