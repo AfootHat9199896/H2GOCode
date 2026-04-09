@@ -25,11 +25,14 @@ int fastSpeed = 63;
 int medSpeed = 50;
 int slowSpeed = 15;
 
+
 float x, y, t;
 
 void setup() {
-  Enes100.begin("H2Go", WATER, 13, 1120, 52, 50);
+  Enes100.begin("H2Go", WATER, 13, 1120, PIN_WIFI_TX, PIN_WIFI_RX);
   H2GoBegin();
+  
+  // Print info to Enes100
   Enes100.println("Starting driving");
   Enes100.print("X = ");
   Enes100.println(Enes100.getX());
@@ -37,18 +40,27 @@ void setup() {
   Enes100.println(Enes100.getY());
   Enes100.print("Theta = ");
   Enes100.println(Enes100.getTheta());
+  
+  // Assign local variables
   t = Enes100.getTheta();
   x = Enes100.getX();
   y = Enes100.getY();
-  if (y > 1) {
+  
+  if (y > 1) { // Spawned on upper half
     goToY(0.55);
+    
     //mission();
+
     reverseY(0.25);
-  } else {
+  } else { // Spawned on lower half
     goToY(1.45);
+
     //mission();
+
     reverseY(0.25);
   }
+  
+  // Navigate through arena
   goToX(1);
   goToY(1.88);
   goToX(3);
@@ -63,9 +75,13 @@ void loop() {
 void turn(float degree) {
   float d;
   d = getShortestTurn(t, degree);
+
+  float smallAngle = .001; // small error for turning
+  float largeAngle = .1; // larger error for turning
+
   // Turns left if the shortest distance is left, otherwise turns right
   if (d > 0) {
-    while (abs(degree - t) > .1) {
+    while (abs(degree - t) > largeAngle) {
       H2GoSetLeftPWM(-fastSpeed);
       H2GoSetRightPWM(fastSpeed);
       t = Enes100.getTheta();
@@ -73,7 +89,7 @@ void turn(float degree) {
     H2GoStopMotors();
     Enes100.print("Fast");
     // Slowing down as we approach the desired angle
-    while (abs(degree - t) > .001) {
+    while (abs(degree - t) > smallAngle) {
       H2GoSetLeftPWM(-slowSpeed);
       H2GoSetRightPWM(slowSpeed);
       t = Enes100.getTheta();
@@ -81,7 +97,7 @@ void turn(float degree) {
     H2GoStopMotors();
     Enes100.print("Slow");
   } else {
-    while (abs(degree - t) > .1) {
+    while (abs(degree - t) > largeAngle) {
       H2GoSetLeftPWM(fastSpeed);
       H2GoSetRightPWM(-fastSpeed);
       t = Enes100.getTheta();
@@ -89,7 +105,7 @@ void turn(float degree) {
     H2GoStopMotors();
     Enes100.print("Fast");
     // Slowing down as we approach the desired angle
-    while (abs(degree - t) > .001) {
+    while (abs(degree - t) > smallAngle) {
       H2GoSetLeftPWM(slowSpeed);
       H2GoSetRightPWM(-slowSpeed);
       t = Enes100.getTheta();
@@ -100,6 +116,7 @@ void turn(float degree) {
 }
 
 void goToY(float Y) {
+  
   // Determines whether the desired Y is above or below the current y, turns appropriately
   if (Y > y) {
     turn(HALF_PI);
