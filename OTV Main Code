@@ -24,7 +24,8 @@ int PIN_WIFI_RX = 50;
 int fastSpeed = 63;
 int medSpeed = 50;
 int slowSpeed = 15;
-
+// Wait time for diaper in milliseconds
+int waitTime = 10000;
 
 float x, y, t;
 
@@ -66,11 +67,15 @@ void setup() {
   goToX(3);
   goToY(1.6);
   goToX(3.75);
+
+  // May need to add lowering rack and pinion to fit under limbo
 }
 
 void loop() {
   delay(100);
 }
+
+// Navigation methods
 
 void turn(float degree) {
   float d;
@@ -214,6 +219,8 @@ float getShortestTurn(float t, float degree) {
   return diff;
 }
 
+// Motors and initialization methods
+
 void H2GoBegin() {  // Adapted from tank startup
   // Motor Initialize
   pinMode(PIN_MOTOR_1_FORWARD, OUTPUT);
@@ -275,6 +282,18 @@ void H2GoSetRightPWM(int pwm) {  // Adapted from tank startup
   H2GoSetMotorPWM(2, pwm);
 }
 
+// Mission methods
+
+void mission(){
+
+  // TAKE WATER READING
+  H2GoMeasureWater();
+  // CHECK FOR POLLUTION
+  checkPollution();
+  // GET SAMPLE
+  getSample();
+}
+
 float H2GoReadDistanceSensor(int sensorId) {  // Adapted from tank startup
   // Verify sensorId
   if (sensorId != 1 && sensorId != 7) { return -1; }
@@ -332,4 +351,26 @@ void H2GoMeasureWater() {
   Serial.print("cm");
   Serial.println();
   delay(250);
+}
+
+void checkPollution(){
+  // Might need to import ML model?
+  int prediction = Enes100.MLGetPrediction(1);
+
+// prediction = 0 will be unpolluted, prediction = 1 will be polluted
+
+  if (prediction == 0) {
+    Enes100.mission(WATER_TYPE, FRESH_UNPOLLUTED);
+  } else {
+    Enes100.mission(WATER_TYPE, FRESH_POLLUTED);
+  }
+}
+void getSample(){
+  // Lower rack and pinion (motor, limit switch)
+
+  // Wait
+  delay(waitTime);
+  // Raise rack and pinion (motor, limit switch)
+
+
 }
