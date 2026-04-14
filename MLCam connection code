@@ -1,0 +1,19 @@
+#include <Enes100.h>
+
+void setup() {
+  Serial.begin(9600);
+  // put your setup code here, to run once:
+  //Enes100.begin(const char* teamName, byte teamType, int markerId, int roomNumber, int wifiModuleTX, int wifiModuleRX)
+  Enes100.begin("H2GO", WATER, 67, 1120, 62, 63);
+  Enes100.println(Enes100.isConnected());
+  Serial.println("hello");
+  Enes100.println("Hello");
+  Enes100.MLGetPrediction(1);
+}
+
+void loop() {
+  //Serial.println(Enes100.isConnected());
+  
+  delay(5000);
+
+}
