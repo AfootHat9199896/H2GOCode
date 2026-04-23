@@ -23,16 +23,22 @@ int PIN_WIFI_RX = 10;
 // PWM Speeds
 int fastSpeed = 100;
 int medSpeed = 50;
-int slowSpeed = 70;
+int slowSpeed = 50;
 // Wait time for diaper in milliseconds
 int waitTime = 10000;
 
 float currentX, currentY, currentTheta;
 
+void justMoveBro() {
+      H2GoSetLeftPWM(fastSpeed);
+      H2GoSetRightPWM(fastSpeed); 
+}
+
+
 void setup() {
   delay(2000);
   
-  Enes100.begin("H2Go", WATER, 543, 1201, PIN_WIFI_TX, PIN_WIFI_RX);
+  Enes100.begin("H2Go", WATER, 721, 1120, PIN_WIFI_TX, PIN_WIFI_RX);
   H2GoBegin();
 
   delay(2000);
@@ -53,32 +59,37 @@ void setup() {
   
   delay(1000);
 
-  if (currentY > 1) { // Spawned on upper half
-    Enes100.println("Upper half");
-    goToY(1.2);
-    goToY(0.9);
-    goToY(0.55);
-    //mission();
-  
 
-    reverseY(0.25);
-  } else { // Spawned on lower half
-    Enes100.println("Lower half");
-    goToY(0.9);
-    goToY(1.2);
-    goToY(1.45);
-    
-    //mission();
+ if (currentY > 1) { // Spawned on upper half
+   Enes100.println("Upper half");
+   goToY(1.35);
+   goToY(1.15);
+   goToY(0.95);
+   goToY(0.85);
+   goToY(0.65);
+   //mission();
+//  
 
-    reverseY(0.25);
-  }
-  
-  // Navigate through arena
-  goToX(1);
-  goToY(1.88);
-  goToX(3);
-  goToY(1.6);
-  goToX(3.75);
+   reverseY(0.25);
+ } else { // Spawned on lower half
+   Enes100.println("Lower half");
+   goToY(0.65);
+   goToY(0.85);
+   goToY(1.05);
+   goToY(1.25);
+   goToY(1.35);
+   
+   //mission();
+
+   reverseY(0.25);
+ }
+ 
+ // Navigate through arena
+ goToX(.9);
+ goToY(1.88);
+ goToX(3);
+ goToY(1.6);
+ goToX(3.75);
 
   // May need to add lowering rack and pinion to fit under limbo
 }
@@ -97,23 +108,23 @@ void update(){
   // Navigation methods
 
 void turn(float desiredAngle) {
-  float d;
-  d = getShortestTurn(currentTheta, desiredAngle);
+  float turnDistance;
+  update();
+  turnDistance = getShortestTurn(currentTheta, desiredAngle);
 
-
-  float smallAngle = .025; // small error for turning
-  float largeAngle = .5; // larger error for turning
+  float smallAngle = .01; // small error for turning
+  float largeAngle = .65; // larger error for turning
 
   // Turns left if the shortest distance is left, otherwise turns right
   
-  if (d > 0) {
+  if (turnDistance > 0) {
     while (abs(desiredAngle - currentTheta) > largeAngle) {
       H2GoSetLeftPWM(fastSpeed);
       H2GoSetRightPWM(-fastSpeed);
       currentTheta = Enes100.getTheta();
     }
     H2GoStopMotors();
-     delay(1000);
+     delay(100);
      Enes100.println("Stopped fast turning");
     // Slowing down as we approach the desired angle
     while (abs(desiredAngle - currentTheta) > smallAngle) {
@@ -122,8 +133,8 @@ void turn(float desiredAngle) {
       currentTheta = Enes100.getTheta();
     }
     H2GoStopMotors();
-    delay(1000);
-      Enes100.println("Stopped slow turning");
+    delay(100);
+    Enes100.println("Stopped slow turning");
   } else {
     while (abs(desiredAngle - currentTheta) > largeAngle) {
       H2GoSetLeftPWM(-fastSpeed);
@@ -131,7 +142,7 @@ void turn(float desiredAngle) {
       currentTheta = Enes100.getTheta();
     }
     H2GoStopMotors();
-     delay(1000);
+     delay(100);
     // Slowing down as we approach the desired angle
     while (abs(desiredAngle - currentTheta) > smallAngle) {
       H2GoSetLeftPWM(-slowSpeed);
@@ -139,38 +150,87 @@ void turn(float desiredAngle) {
       currentTheta = Enes100.getTheta();
     }
     H2GoStopMotors();
-     delay(1000);
+     delay(100);
+  }
+}
+
+void leftTurn(float desiredAngle) {
+  float turnDistance;
+  update();
+  turnDistance = getShortestTurn(currentTheta, desiredAngle);
+
+  float smallAngle = .01; // small error for turning
+  float largeAngle = .65; // larger error for turning
+
+  // Turns left if the shortest distance is left, otherwise turns right
+  
+  if (turnDistance > 0) {
+    while (abs(desiredAngle - currentTheta) > largeAngle) {
+      H2GoSetLeftPWM(fastSpeed);
+      H2GoSetRightPWM(-fastSpeed);
+      currentTheta = Enes100.getTheta();
+    }
+    H2GoStopMotors();
+     delay(100);
+     Enes100.println("Stopped fast turning");
+    // Slowing down as we approach the desired angle
+    while (abs(desiredAngle - currentTheta) > smallAngle) {
+      H2GoSetLeftPWM(slowSpeed);
+      H2GoSetRightPWM(-slowSpeed);
+      currentTheta = Enes100.getTheta();
+    }
+    H2GoStopMotors();
+    delay(100);
+    Enes100.println("Stopped slow turning");
+  } else {
+    while (abs(desiredAngle - currentTheta) > largeAngle) {
+      H2GoSetLeftPWM(-fastSpeed);
+      H2GoSetRightPWM(fastSpeed);
+      currentTheta = Enes100.getTheta();
+    }
+    H2GoStopMotors();
+     delay(100);
+    // Slowing down as we approach the desired angle
+    while (abs(desiredAngle - currentTheta) > smallAngle) {
+      H2GoSetLeftPWM(-slowSpeed);
+      H2GoSetRightPWM(slowSpeed);
+      currentTheta = Enes100.getTheta();
+    }
+    H2GoStopMotors();
+     delay(100);
   }
 }
 
 void goToY(float desiredY) {
   
   // Determines whether the desired Y is above or below the current y, turns appropriately
+  update();
   if (desiredY > currentY) {
+    Enes100.print("going up");
     turn(HALF_PI);
-    Enes100.print("Turned?");
   } else {
+    Enes100.print("going down");
     turn(-1 * HALF_PI);
-    Enes100.print("ReverseTurned?");
   }
+  update();
   // Moves towards the desired y value until it gets close
   while (abs(desiredY - currentY) > .05) {
     H2GoSetLeftPWM(fastSpeed);
     H2GoSetRightPWM(fastSpeed);
     currentY = Enes100.getY();
-    if (abs(currentTheta-HALF_PI) > .025){
+    // if (abs(currentTheta-HALF_PI) > .025){
       
-      // FIX ALIGNMENT
-    }
+    //   // FIX ALIGNMENT
+    // }
   }
   H2GoStopMotors();
   // Moves more accurately to the desired location
-  while (abs(desiredY - currentY) > 0.001) {
-    H2GoSetLeftPWM(slowSpeed);
-    H2GoSetRightPWM(slowSpeed);
-    currentY = Enes100.getY();
-  }
-  H2GoStopMotors();
+  // while (abs(desiredY - currentY) > 0.001) {
+  //   H2GoSetLeftPWM(slowSpeed);
+  //   H2GoSetRightPWM(slowSpeed);
+  //   currentY = Enes100.getY();
+  // }
+  // H2GoStopMotors();
 }
 
 void goToX(float X) {
@@ -301,12 +361,12 @@ void H2GoStopMotors() {  // Adapted from tank startup
   H2GoSetMotorPWM(2, 0);
 }
 
-void H2GoSetLeftPWM(int pwm) {  // Adapted from tank startup
+void H2GoSetLeftPWM(int pwm) {  // ACTUALLY RIGHT PWM
   H2GoSetMotorPWM(1, pwm);
 }
 
-void H2GoSetRightPWM(int pwm) {  // Adapted from tank startup
-  H2GoSetMotorPWM(2, pwm + (.3 * pwm));
+void H2GoSetRightPWM(int pwm) {  // ACTUALLY LEFT PWM
+  H2GoSetMotorPWM(2, pwm + (.27 * pwm));
 }
 
 // Mission methods
@@ -366,72 +426,6 @@ void measureWater() {
   }
 }
 
-// float H2GoReadDistanceSensor(int sensorId) {  // Adapted from tank startup
-//   // Verify sensorId
-//   if (sensorId != 1 && sensorId != 2) { return -1; }
-
-//   int trig_pin;
-//   int echo_pin;
-
-//   // Get pin to use
-//   if (sensorId == 1) {
-//     trig_pin = PIN_US_FRONT_TRIG;
-//     echo_pin = PIN_US_FRONT_ECHO;
-//   } else {
-//     trig_pin = PIN_US_MISSION_TRIG;
-//     echo_pin = PIN_US_MISSION_ECHO;
-//   }
-
-//   // Trigger and read the distance sensor
-//   digitalWrite(trig_pin, 0);
-//   delayMicroseconds(2);
-//   digitalWrite(trig_pin, 1);
-//   delayMicroseconds(10);
-//   digitalWrite(trig_pin, 0);
-//   int duration = pulseIn(echo_pin, 1);
-
-//   return duration;
-
-//   // if (duration < 20000 && duration > 0) {
-//   //   return min(duration * .0001715, 1);
-//   // } else return -1;
-
-// }
-
-// void H2GoMeasureWater() {
-//   float cm, waterDistance;
-
-//   cm = (H2GoReadDistanceSensor(2) / 2) / 29.1;  // Convert to cm
-  
-//   Enes100.println("cm is ");
-//   Enes100.println(cm);
-//   // 9.35 distance
-//   waterDistance = 9.35 - cm;
-
-//   int range20 = abs(2.0 - waterDistance);
-//   int range30 = abs(3.0 - waterDistance);
-//   int range40 = abs(4.0 - waterDistance);
-
-//   // Serial.println("Working");
-//   if (range20 < range30 && range20 < range40) {
-//     Enes100.mission(DEPTH, 20);
-//     Enes100.println("Depth is 20");
-//   } else if (range30 < range20 && range30 < range40) {
-//     Enes100.mission(DEPTH, 30);
-//     Enes100.println("Depth is 30");
-//   } else {
-//     Enes100.mission(DEPTH, 40);
-//     Enes100.println("Depth is 40");
-//   }
-//   // inches = (duration/2) / 74;   // Convert to inches
-//   // Serial.print(inches);
-//   // Serial.print("in, ");
-//   // Serial.print(cm);
-//   // Serial.print("cm");
-//   // Serial.println();
-//   delay(250);
-// }
-
 void checkPollution(){
   // Might need to import ML model?
   int prediction = Enes100.MLGetPrediction(1);
@@ -444,6 +438,7 @@ void checkPollution(){
     Enes100.mission(WATER_TYPE, FRESH_POLLUTED);
   }
 }
+
 void getSample(){
   // Lower rack and pinion (motor, limit switch)
 
