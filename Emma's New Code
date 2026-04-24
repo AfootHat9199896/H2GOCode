@@ -89,7 +89,7 @@ void setup() {
   if (currentY > 1) {
     Enes100.println("OTV in upper location. Mission in lower location.");
     goToY(LOWER_MISSION_Y);
-  } else { 
+  } else {
     Enes100.println("OTV in lower location. Mission in upper location.");
     goToY(UPPER_MISSION_Y);
   }
@@ -109,7 +109,6 @@ void setup() {
   // Lower rack before limbo
   lowerRack();
   goToX(3.75);
-
 }
 
 void loop() {
@@ -143,7 +142,7 @@ void update() {
 // Turning methods
 
 void turn(float desiredAngle) {
-  
+
   float turnDistance;
   update();
   turnDistance = getShortestTurn(currentTheta, desiredAngle);
@@ -165,7 +164,7 @@ void turn(float desiredAngle) {
 
     while (abs(desiredAngle - currentTheta) > SMALL_ANGLE_RANGE) {  // While outside of small angle range
       spinCCW(SLOW_SPEED);
-      delay(BUFFER/5);
+      delay(BUFFER / 5);
       stopMotors();
       update();
     }
@@ -184,14 +183,14 @@ void turn(float desiredAngle) {
 
     // Stop motors and wait
     stopMotors();
-    delay(BUFFER/4);
+    delay(BUFFER / 4);
     Enes100.println("Within large angle range.");
     update();
 
     // Slowing down as we approach the desired angle
     while (abs(desiredAngle - currentTheta) > SMALL_ANGLE_RANGE) {  // While outside of small angle range
       spinCW(SLOW_SPEED);
-      delay(BUFFER/5);
+      delay(BUFFER / 5);
       stopMotors();
       update();
     }
@@ -247,7 +246,7 @@ void leftTurn(float desiredAngle) {
   while (abs(desiredAngle - currentTheta) > SMALL_ANGLE_RANGE) {
     setLeftPWM(SLOW_SPEED + 10);
     update();
-    delay(BUFFER/2);
+    delay(BUFFER / 2);
     stopMotors();
   }
   stopMotors();
@@ -284,7 +283,6 @@ void goToY(float desiredY) {
     if (abs(currentTheta - desiredTheta) > SMALL_ANGLE_RANGE) {
       turn(desiredTheta);
     }
-
   }
 
   // Stop when within range
@@ -296,12 +294,15 @@ void goToX(float desiredX) {
   // Within how many meters the OTV will reach site
 
   update();
+  float desiredTheta;
   // Determines whether the desired x is to the right or left of current x, turns appropriately
   if (desiredX > currentX) {
     Enes100.println("Turn east.");
+    desiredTheta = 0;
     turn(0);
   } else {
     Enes100.println("Turn west.");
+    desiredTheta = PI;
     turn(PI);
   }
 
@@ -309,7 +310,12 @@ void goToX(float desiredX) {
   while (abs(desiredX - currentX) > DISTANCE_RANGE) {
     setBothPWM(FAST_SPEED);
     update();
+
+    if (abs(currentTheta - desiredTheta) > SMALL_ANGLE_RANGE) {
+      turn(desiredTheta);
+    }
   }
+
 
   // Stop when within range
   stopMotors();
