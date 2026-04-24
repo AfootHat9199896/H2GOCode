@@ -1,19 +1,19 @@
 
-const int topLimit = 12; //sets top limit switch pin
-const int bottomLimit = 13; //sets bottom limit switch pin 
-const int motorPin1 = 4; //pin for the rack and pinion motor (Goes from arduino pin 4 to IN2) (Motor power to OUT1 and GND to OUT2 on HBRIDGE)
-const int motorPin2 = 5; //pin for the rack and pinion motor (Goes from arduino pin 5 to IN1)
-const int ENA = 3; 
+const int topLimit = 37; //sets top limit switch pin
+const int bottomLimit = 35; //sets bottom limit switch pin 
+const int motorPin1 = 26; //pin for the rack and pinion motor (Goes from arduino pin 4 to IN2) (Motor power to OUT1 and GND to OUT2 on HBRIDGE)
+const int motorPin2 = 50; //pin for the rack and pinion motor (Goes from arduino pin 5 to IN1)
+const int ENA = 12; 
 const int ENAVoltage = 70; //voltage for the limit switch motor set from 0-255
 
-const int waterAbsorbTime = 5000; //time in ms that water is absorbed
+const int waterAbsorbTime = 10000; //time in ms that water is absorbed
 
 void setup() {
   pinMode(ENA,OUTPUT);
   pinMode(motorPin1,OUTPUT);
   pinMode(motorPin2,OUTPUT);
 Serial.begin(9600); //this initializes the Serial Monitor so that I can see things on my computer screen
-  delay(5000);
+  //delay(5000);
 
 }
 
@@ -84,6 +84,6 @@ void loop() {
   Serial.println();
   moveRack("Up"); */
   runMission();
-  delay(3000);
+  delay(10000);
 }
 
