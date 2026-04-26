@@ -146,6 +146,7 @@ void turn(float desiredAngle) {
   float turnDistance;
   update();
   turnDistance = getShortestTurn(currentTheta, desiredAngle);
+  int turnBuffer = 200;
 
   // Turns left if the shortest distance is left, otherwise turns right
 
@@ -164,8 +165,9 @@ void turn(float desiredAngle) {
 
     while (abs(desiredAngle - currentTheta) > SMALL_ANGLE_RANGE) {  // While outside of small angle range
       spinCCW(SLOW_SPEED);
-      delay(BUFFER / 5);
+      delay(turnBuffer);
       stopMotors();
+      delay(turnBuffer);
       update();
     }
 
@@ -190,8 +192,9 @@ void turn(float desiredAngle) {
     // Slowing down as we approach the desired angle
     while (abs(desiredAngle - currentTheta) > SMALL_ANGLE_RANGE) {  // While outside of small angle range
       spinCW(SLOW_SPEED);
-      delay(BUFFER / 5);
+      delay(turnBuffer);
       stopMotors();
+      delay(turnBuffer);
       update();
     }
 
