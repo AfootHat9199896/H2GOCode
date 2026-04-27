@@ -34,7 +34,7 @@ const int FRONT_SW = 25;
 
 // Drive Motor Speeds
 const int FAST_SPEED = 100;
-const int SLOW_SPEED = 50;
+const int SLOW_SPEED = 55;
 
 // Rack and Pinion Motor Speed
 const int RACK_SPEED = 70;
@@ -44,20 +44,23 @@ const int WATER_ABSORB_TIME = 10000;
 
 // Setup
 const int ARUCO = 721;
-const int ROOM_NUMBER = 1120;
+const int ROOM_NUMBER = 1201;
 const int BUFFER = 1000;
-const int UPPER_MISSION_Y = 1.35;
-const int LOWER_MISSION_Y = 0.65;
+const float UPPER_MISSION_Y = 1.35;
+const float LOWER_MISSION_Y = 0.65;
 
 // Ranges
-const int SMALL_ANGLE_RANGE = .01;
-const int LARGE_ANGLE_RANGE = .65;
-const int DISTANCE_RANGE = .05;
+const float SMALL_ANGLE_RANGE = .018;
+const float LARGE_ANGLE_RANGE = .65;
+const float DISTANCE_RANGE = .05;
 
 // Location
 float currentX;
 float currentY;
 float currentTheta;
+
+// ADD TO TURN METHOD IF DISTANCE IS INCREASING STOP AND REEVALUATE
+// AVERAGE ULTRASONIC READINGS
 
 // Main methods
 void setup() {
@@ -94,24 +97,40 @@ void setup() {
     goToY(UPPER_MISSION_Y);
   }
 
+  Enes100.println("We made it!");
+  // If limit switch isn't pressed, move forward until it is. Then stop.
+  if (digitalRead(FRONT_SW) != HIGH) {
+    setBothPWM(SLOW_SPEED);
+    Enes100.println("Limit not pressed");
+  }
+  Enes100.println("Limit pressed");
+  delay(BUFFER * 2);
+  stopMotors();
+
+  getSample();
+
+
+
   // Mission tasks
   // mission();
 
   // Reverse to center of arena
-  reverseY(0.25);
+  // reverseY(0.25);
 
-  // Navigate through arena
-  goToX(.9);
-  goToY(1.88);
-  leftTurn(0);
-  goToX(3);
-  goToY(1.6);
-  // Lower rack before limbo
-  lowerRack();
-  goToX(3.75);
+  // // Navigate through arena
+  // goToX(.9);
+  // goToY(1.88);
+  // leftTurn(0);
+  // goToX(3);
+  // goToY(1.6);
+  // // Lower rack before limbo
+  // lowerRack();
+  // goToX(3.75);
 }
 
 void loop() {
+  // delay(1000);
+  // measureWater();
   update();
 }
 
@@ -146,9 +165,10 @@ void turn(float desiredAngle) {
   float turnDistance;
   update();
   turnDistance = getShortestTurn(currentTheta, desiredAngle);
-  int turnBuffer = 200;
+  int turnBuffer = 100;
 
   // Turns left if the shortest distance is left, otherwise turns right
+
 
   if (turnDistance > 0) {  // Making a counter-clockwise turn
 
@@ -158,9 +178,9 @@ void turn(float desiredAngle) {
     }
 
     // Stop motors and wait
-    stopMotors();
-    delay(BUFFER / 4);
     Enes100.println("Within large angle range.");
+    stopMotors();
+    delay(BUFFER);
     update();
 
     while (abs(desiredAngle - currentTheta) > SMALL_ANGLE_RANGE) {  // While outside of small angle range
@@ -261,6 +281,7 @@ void leftTurn(float desiredAngle) {
 
 void goToY(float desiredY) {
 
+  float movingRange = .083;
   // Within how many meters the OTV will reach site
   update();
   float desiredTheta;
@@ -283,7 +304,7 @@ void goToY(float desiredY) {
     setBothPWM(FAST_SPEED);
     update();
 
-    if (abs(currentTheta - desiredTheta) > SMALL_ANGLE_RANGE) {
+    if (abs(currentTheta - desiredTheta) > movingRange) {
       turn(desiredTheta);
     }
   }
@@ -452,7 +473,7 @@ void mission() {
 
 void measureWater() {
 
-  const long sensorHeight = 80;
+  const long sensorHeight = 75;
 
   long duration;
   long mm;
@@ -482,7 +503,7 @@ void measureWater() {
   // Subtracts sensor to water distance from sensor to bowl distance
   waterDistance = sensorHeight - mm;
 
-  // Compares differences between water distance and 20, 20, 40 mm
+  // Compares differences between water distance and 20, 30, 40 mm
   int range20 = abs(20 - waterDistance);
   int range30 = abs(30 - waterDistance);
   int range40 = abs(40 - waterDistance);
