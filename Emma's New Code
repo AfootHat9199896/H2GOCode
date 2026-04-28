@@ -30,10 +30,9 @@ const int PIN_WIFI_RX = 10;
 const int TOP_SW = 37;
 const int BOTTOM_SW = 35;
 const int FRONT_SW = 25;
-// "High voltage on 23" - Gideon
 
 // Drive Motor Speeds
-const int FAST_SPEED = 100;
+const int FAST_SPEED = 120;
 const int SLOW_SPEED = 55;
 
 // Rack and Pinion Motor Speed
@@ -44,7 +43,7 @@ const int WATER_ABSORB_TIME = 10000;
 
 // Setup
 const int ARUCO = 721;
-const int ROOM_NUMBER = 1201;
+const int ROOM_NUMBER = 1120;
 const int BUFFER = 1000;
 const float UPPER_MISSION_Y = 1.35;
 const float LOWER_MISSION_Y = 0.65;
@@ -53,14 +52,13 @@ const float LOWER_MISSION_Y = 0.65;
 const float SMALL_ANGLE_RANGE = .018;
 const float LARGE_ANGLE_RANGE = .65;
 const float DISTANCE_RANGE = .05;
+const float MOVING_RANGE = .083;
+const int TURN_BUFFER = 100;
 
 // Location
 float currentX;
 float currentY;
 float currentTheta;
-
-// ADD TO TURN METHOD IF DISTANCE IS INCREASING STOP AND REEVALUATE
-// AVERAGE ULTRASONIC READINGS
 
 // Main methods
 void setup() {
@@ -89,43 +87,78 @@ void setup() {
   delay(BUFFER);
 
   // Navigate to mission site
-  if (currentY > 1) {
-    Enes100.println("OTV in upper location. Mission in lower location.");
-    goToY(LOWER_MISSION_Y);
-  } else {
-    Enes100.println("OTV in lower location. Mission in upper location.");
-    goToY(UPPER_MISSION_Y);
-  }
+  // if (currentY > 1) {
+  //   Enes100.println("OTV in upper location. Mission in lower location.");
+  //   goToY(LOWER_MISSION_Y);
+  //   reverseY(0.40);
+  // } else {
+  //   Enes100.println("OTV in lower location. Mission in upper location.");
+  //   goToY(UPPER_MISSION_Y);
+  //   reverseY(0.15);
+  // }
 
-  Enes100.println("We made it!");
   // If limit switch isn't pressed, move forward until it is. Then stop.
-  if (digitalRead(FRONT_SW) != HIGH) {
-    setBothPWM(SLOW_SPEED);
-    Enes100.println("Limit not pressed");
-  }
-  Enes100.println("Limit pressed");
-  delay(BUFFER * 2);
-  stopMotors();
-
-  getSample();
-
-
+  // if (digitalRead(FRONT_SW) != HIGH) {
+  //   setBothPWM(SLOW_SPEED);
+  //   Enes100.println("Limit not pressed");
+  // }
+  // Enes100.println("Limit pressed");
+  // delay(BUFFER * 2);
+  // stopMotors();
 
   // Mission tasks
   // mission();
 
   // Reverse to center of arena
-  // reverseY(0.25);
+  // reverseY(0.15);
 
-  // // Navigate through arena
-  // goToX(.9);
-  // goToY(1.88);
-  // leftTurn(0);
-  // goToX(3);
-  // goToY(1.6);
-  // // Lower rack before limbo
-  // lowerRack();
-  // goToX(3.75);
+  // Navigate through arena
+  goToX(.8);
+  goToY(1.75);
+
+  // Align to wall
+  leftTurn((4 * PI) / 10);
+  setBothPWM(SLOW_SPEED);
+  delay(BUFFER * 1.5);
+  stopMotors();
+  Enes100.println("Turn 1");
+
+  leftTurn((3 * PI) / 10);
+  setBothPWM(SLOW_SPEED);
+  delay(BUFFER * 1.5);
+  stopMotors();
+  Enes100.println("Turn 2");
+
+  leftTurn((2 * PI) / 10);
+  setBothPWM(SLOW_SPEED);
+  delay(BUFFER * 2);
+  stopMotors();
+  Enes100.println("Turn 3");
+
+
+
+  leftTurn(PI / 10);
+  setBothPWM(SLOW_SPEED);
+  delay(BUFFER * 4);
+  stopMotors();
+  Enes100.println("Turn 4");
+
+  leftTurn(PI / 20);
+  setBothPWM(SLOW_SPEED);
+  delay(BUFFER * 4);
+  stopMotors();
+  Enes100.println("Turn 5");
+
+  leftTurn(0);
+  Enes100.println("Turn 6");
+
+
+  // Go to area in front of limbo
+  goToX(3);
+  goToY(1.6);
+  // Lower rack before limbo
+  lowerRack();
+  goToX(3.75);
 }
 
 void loop() {
@@ -165,7 +198,6 @@ void turn(float desiredAngle) {
   float turnDistance, deltaCurrentDesired1, deltaCurrentDesired2;
   update();
   turnDistance = getShortestTurn(currentTheta, desiredAngle);
-  int turnBuffer = 100;
 
   // Turns left if the shortest distance is left, otherwise turns right
 
@@ -186,17 +218,17 @@ void turn(float desiredAngle) {
     while (abs(desiredAngle - currentTheta) > SMALL_ANGLE_RANGE) {  // While outside of small angle range
       deltaCurrentDesired1 = abs(desiredAngle - currentTheta);
       spinCCW(SLOW_SPEED);
-      delay(turnBuffer);
+      delay(TURN_BUFFER);
       stopMotors();
-      delay(turnBuffer);
+      delay(TURN_BUFFER);
       update();
       deltaCurrentDesired2 = abs(desiredAngle - currentTheta);
-      if (deltaCurrentDesired2 > deltaCurrentDesired1){
+      if (deltaCurrentDesired2 > deltaCurrentDesired1) {
         break;
       }
     }
     stopMotors();
-    if (abs(desiredAngle - currentTheta) > SMALL_ANGLE_RANGE){
+    if (abs(desiredAngle - currentTheta) > SMALL_ANGLE_RANGE) {
       turn(desiredAngle);
     }
     // Stop motors and wait
@@ -220,18 +252,18 @@ void turn(float desiredAngle) {
     while (abs(desiredAngle - currentTheta) > SMALL_ANGLE_RANGE) {  // While outside of small angle range
       deltaCurrentDesired1 = abs(desiredAngle - currentTheta);
       spinCW(SLOW_SPEED);
-      delay(turnBuffer);
+      delay(TURN_BUFFER);
       stopMotors();
-      delay(turnBuffer);
+      delay(TURN_BUFFER);
       update();
       deltaCurrentDesired2 = abs(desiredAngle - currentTheta);
-      if (deltaCurrentDesired2 > deltaCurrentDesired1){
+      if (deltaCurrentDesired2 > deltaCurrentDesired1) {
         break;
       }
     }
     stopMotors();
     // Stop motors and wait
-    if (abs(desiredAngle - currentTheta) > SMALL_ANGLE_RANGE){
+    if (abs(desiredAngle - currentTheta) > SMALL_ANGLE_RANGE) {
       turn(desiredAngle);
     }
     delay(100);
@@ -254,48 +286,30 @@ void leftTurn(float desiredAngle) {
   update();
   turnDistance = getShortestTurn(currentTheta, desiredAngle);
 
-  // Turns left if the shortest distance is left, otherwise turns right
-
-  // if (turnDistance > 0) {
-  // while (abs(desiredAngle - currentTheta) > largeAngle) {
-  //   H2GoSetRightPWM(-fastSpeed);
-  //   currentTheta = Enes100.getTheta();
-  // }
-  // H2GoStopMotors();
-  //  delay(100);
-  //  Enes100.println("Stopped fast turning");
-  // // Slowing down as we approach the desired angle
-  // while (abs(desiredAngle - currentTheta) > smallAngle) {
-  //   H2GoSetRightPWM(-slowSpeed);
-  //   currentTheta = Enes100.getTheta();
-  // }
-  // H2GoStopMotors();
-  // delay(100);
-  // Enes100.println("Stopped slow turning");
-  // } else {
-  while (abs(desiredAngle - currentTheta) > LARGE_ANGLE_RANGE) {
-    setLeftPWM(FAST_SPEED);
-    update();
+  if (abs(0 - currentTheta) < .05) {
+    return;
   }
-  stopMotors();
-  delay(100);
   // Slowing down as we approach the desired angle
-  while (abs(desiredAngle - currentTheta) > SMALL_ANGLE_RANGE) {
-    setLeftPWM(SLOW_SPEED + 10);
+  while (abs(desiredAngle - currentTheta) > .08) {
     update();
-    delay(BUFFER / 2);
+    if (abs(0 - currentTheta) < .05) {
+      return;
+    }
+    setLeftPWM(SLOW_SPEED + 10);
+    delay(TURN_BUFFER);
     stopMotors();
+    delay(TURN_BUFFER);
+    update();
   }
   stopMotors();
-  delay(100);
-  // }
+  delay(BUFFER / 2);
+
 }
 
 // Moving methods
 
 void goToY(float desiredY) {
 
-  float movingRange = .083;
   // Within how many meters the OTV will reach site
   update();
   float desiredTheta;
@@ -318,7 +332,7 @@ void goToY(float desiredY) {
     setBothPWM(FAST_SPEED);
     update();
 
-    if (abs(currentTheta - desiredTheta) > movingRange) {
+    if (abs(currentTheta - desiredTheta) > MOVING_RANGE) {
       turn(desiredTheta);
     }
   }
@@ -349,7 +363,7 @@ void goToX(float desiredX) {
     setBothPWM(FAST_SPEED);
     update();
 
-    if (abs(currentTheta - desiredTheta) > SMALL_ANGLE_RANGE) {
+    if (abs(currentTheta - desiredTheta) > MOVING_RANGE) {
       turn(desiredTheta);
     }
   }
@@ -474,10 +488,10 @@ void mission() {
   measureWater();
 
   // Check pollution
-  checkPollution();
+  // checkPollution();
 
   // Move backwards
-  setBothPWM(SLOW_SPEED);
+  setBothPWM(-SLOW_SPEED);
   delay(BUFFER / 2);
   stopMotors();
 
