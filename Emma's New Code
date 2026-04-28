@@ -162,7 +162,7 @@ void update() {
 
 void turn(float desiredAngle) {
 
-  float turnDistance;
+  float turnDistance, deltaCurrentDesired1, deltaCurrentDesired2;
   update();
   turnDistance = getShortestTurn(currentTheta, desiredAngle);
   int turnBuffer = 100;
@@ -184,15 +184,22 @@ void turn(float desiredAngle) {
     update();
 
     while (abs(desiredAngle - currentTheta) > SMALL_ANGLE_RANGE) {  // While outside of small angle range
+      deltaCurrentDesired1 = abs(desiredAngle - currentTheta);
       spinCCW(SLOW_SPEED);
       delay(turnBuffer);
       stopMotors();
       delay(turnBuffer);
       update();
+      deltaCurrentDesired2 = abs(desiredAngle - currentTheta);
+      if (deltaCurrentDesired2 > deltaCurrentDesired1){
+        break;
+      }
     }
-
-    // Stop motors and wait
     stopMotors();
+    if (abs(desiredAngle - currentTheta) > SMALL_ANGLE_RANGE){
+      turn(desiredAngle);
+    }
+    // Stop motors and wait
     delay(BUFFER / 4);
     Enes100.println("Within small angle range.");
 
@@ -211,15 +218,22 @@ void turn(float desiredAngle) {
 
     // Slowing down as we approach the desired angle
     while (abs(desiredAngle - currentTheta) > SMALL_ANGLE_RANGE) {  // While outside of small angle range
+      deltaCurrentDesired1 = abs(desiredAngle - currentTheta);
       spinCW(SLOW_SPEED);
       delay(turnBuffer);
       stopMotors();
       delay(turnBuffer);
       update();
+      deltaCurrentDesired2 = abs(desiredAngle - currentTheta);
+      if (deltaCurrentDesired2 > deltaCurrentDesired1){
+        break;
+      }
     }
-
-    // Stop motors and wait
     stopMotors();
+    // Stop motors and wait
+    if (abs(desiredAngle - currentTheta) > SMALL_ANGLE_RANGE){
+      turn(desiredAngle);
+    }
     delay(100);
     Enes100.println("Within small angle range.");
   }
