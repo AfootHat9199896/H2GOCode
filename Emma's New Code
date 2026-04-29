@@ -504,48 +504,66 @@ void measureWater() {
   const long sensorHeight = 75;
 
   long duration;
-  long mm;
-  long waterDistance;
+  float mm;
+  float waterDistance;
+  float averageWaterDepth = 0;
 
   // Repeats pin assignment (this can probably be taken out)
   pinMode(PIN_US_MISSION_TRIG, OUTPUT);
   pinMode(PIN_US_MISSION_ECHO, INPUT);
 
-  // Pulses
-  digitalWrite(PIN_US_MISSION_TRIG, LOW);
-  delayMicroseconds(5);
-  digitalWrite(PIN_US_MISSION_TRIG, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(PIN_US_MISSION_TRIG, LOW);
+  // Amount of times you want it to loop through 
+  const int loopAverage = 20;
 
-  // Read signal
-  duration = pulseIn(PIN_US_MISSION_ECHO, HIGH);
-  Enes100.println(duration);
+  for (int i = 0; i < loopAverage; i++) {
+    // Pulses
+    digitalWrite(PIN_US_MISSION_TRIG, LOW);
+    delayMicroseconds(5);
+    digitalWrite(PIN_US_MISSION_TRIG, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(PIN_US_MISSION_TRIG, LOW);
 
-  // Convert to cm
-  mm = ((duration / 2.0) / 29.1) * 10;
+    // Read signal
+    duration = pulseIn(PIN_US_MISSION_ECHO, HIGH);
+    Enes100.println(duration);
 
-  Enes100.print("Distance in millimeters is ");
-  Enes100.println(mm);
+    // Convert to cm
+    mm = ((duration / 2.0) / 29.1) * 10;
 
-  // Subtracts sensor to water distance from sensor to bowl distance
-  waterDistance = sensorHeight - mm;
+    //Enes100.print("Distance in millimeters is ");
+    //Enes100.println(mm);
+
+    // Subtracts sensor to water distance from sensor to bowl distance
+    waterDistance = sensorHeight - mm;
+
+    // Adds to average variable to be divided after the loop ends
+    averageWaterDepth += waterDistance;
+  }
+  //Divides to get average 
+  averageWaterDepth = averageWaterDepth / loopAverage;
+  // Reassigns averageWaterDepth it to waterDistance 
+  waterDistance = averageWaterDepth;
 
   // Compares differences between water distance and 20, 30, 40 mm
-  int range20 = abs(20 - waterDistance);
-  int range30 = abs(30 - waterDistance);
-  int range40 = abs(40 - waterDistance);
+  float range20 = abs(20 - waterDistance);
+  float range30 = abs(30 - waterDistance);
+  float range40 = abs(40 - waterDistance);
 
   if (range20 < range30 && range20 < range40) {
-    Enes100.mission(DEPTH, 20);
-    Serial.println("Water depth is 20 mm.");
+    //Enes100.mission(DEPTH, 20);
+    //Serial.println("Water depth is 20 mm.");
+    averageWaterDepth += 20;
   } else if (range30 < range20 && range30 < range40) {
-    Enes100.mission(DEPTH, 30);
-    Serial.println("Water depth is 30 mm.");
+    //Enes100.mission(DEPTH, 30);
+    //Serial.println("Water depth is 30 mm.");
+    averageWaterDepth+= 30;
   } else {
-    Enes100.mission(DEPTH, 40);
-    Serial.println("Water depth is 40 mm.");
+    //Enes100.mission(DEPTH, 40);
+    //Serial.println("Water depth is 40 mm.");
+    averageWaterDepth += 40;
   }
+   
+  
 }
 
 void checkPollution() {
