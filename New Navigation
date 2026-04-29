@@ -1,0 +1,687 @@
+#include "Arduino.h"
+#include "Enes100.h"
+
+// Pin Assignments
+
+//Wheel Motor Assignments
+const int PIN_MOTOR_1_FORWARD = 5;
+const int PIN_MOTOR_1_REVERSE = 6;
+const int PIN_MOTOR_1_SPEED = 7;
+const int PIN_MOTOR_2_FORWARD = 3;
+const int PIN_MOTOR_2_REVERSE = 2;
+const int PIN_MOTOR_2_SPEED = 4;
+
+// Rack and Pinion Motor Assignments
+const int PIN_RACK_1 = 26;
+const int PIN_RACK_2 = 50;
+const int PIN_ENA = 12;
+
+//Ultrasonic Assignments
+const int PIN_US_FRONT_TRIG = 9;
+const int PIN_US_FRONT_ECHO = 13;
+const int PIN_US_MISSION_TRIG = 45;
+const int PIN_US_MISSION_ECHO = 46;
+
+// WiFi Module
+const int PIN_WIFI_TX = 11;
+const int PIN_WIFI_RX = 10;
+
+// Limit Switch
+const int TOP_SW = 37;
+const int BOTTOM_SW = 35;
+const int FRONT_SW = 25;
+
+// Drive Motor Speeds
+const int FAST_SPEED = 120;
+const int SLOW_SPEED = 55;
+
+// Rack and Pinion Motor Speed
+const int RACK_SPEED = 70;
+
+// Wait time for diaper in milliseconds
+const int WATER_ABSORB_TIME = 10000;
+
+// Setup
+const int ARUCO = 721;
+const int ROOM_NUMBER = 1201;
+const int BUFFER = 1000;
+const float UPPER_MISSION_Y = 1.35;
+const float LOWER_MISSION_Y = 0.65;
+
+// Ranges
+const float SMALL_ANGLE_RANGE = .018;
+const float LARGE_ANGLE_RANGE = .65;
+const float DISTANCE_RANGE = .05;
+const float MOVING_RANGE = .083;
+const int TURN_BUFFER = 100;
+
+// Location
+float currentX;
+float currentY;
+float currentTheta;
+
+// Main methods
+void setup() {
+
+  delay(BUFFER * 2);
+
+  // Initialize in Enes100
+  Enes100.begin("H2Go", WATER, ARUCO, ROOM_NUMBER, PIN_WIFI_TX, PIN_WIFI_RX);
+  // Initialize pins as input & output
+  assignPinModes();
+
+  delay(BUFFER * 2);
+
+  // Print info to Enes100
+  Enes100.println("Starting driving.");
+  Enes100.print("X = ");
+  Enes100.println(Enes100.getX());
+  Enes100.print("Y = ");
+  Enes100.println(Enes100.getY());
+  Enes100.print("Theta = ");
+  Enes100.println(Enes100.getTheta());
+
+  // Assign local variables
+  update();
+
+  delay(BUFFER);
+
+  // Navigate to mission site
+  if (currentY > 1) {
+    Enes100.println("OTV in upper location. Mission in lower location.");
+    goToY(LOWER_MISSION_Y);
+    reverseY(0.25);
+  } else {
+    Enes100.println("OTV in lower location. Mission in upper location.");
+    goToY(UPPER_MISSION_Y);
+    reverseY(0.25);
+  }
+
+  // If limit switch isn't pressed, move forward until it is. Then stop.
+  if (digitalRead(FRONT_SW) != HIGH) {
+    setBothPWM(SLOW_SPEED);
+    Enes100.println("Limit not pressed");
+  }
+  Enes100.println("Limit pressed");
+  delay(BUFFER * 2);
+  stopMotors();
+
+  // Mission tasks
+  // mission();
+
+  // Reverse to center of arena
+  // reverseY(0.25);
+
+  // FIRST CHECK
+  goToX(0.75);
+
+  int location;  // 1 is top, 2 is middle, 3 is bottom
+
+  Enes100.println("Start the process");
+
+
+  if (isAheadClear()) {
+    // Middle is clear, go
+    goToX(1.6);
+    location = 2;
+    Enes100.println("Location 2");
+  } else {
+    // Check top
+    goToY(1.5);
+    turn(0);
+    if (isAheadClear()) {
+      // Top is clear, go
+      goToX(1.6);
+      location = 1;
+      Enes100.println("Location 1");
+    } else {
+      // Bottom is clear, go
+      goToY(0.4);
+      goToX(1.6);
+      location = 3;
+      Enes100.println("Location 3");
+    }
+  }
+
+  if (location == 1) {
+    turn(0);
+    if (isAheadClear()) {
+      goToX(2.6);
+    } else {
+      goToY(1);
+      turn(0);
+      if (isAheadClear()) {
+        goToX(2.6);
+      } else {
+        goToY(0.4);
+        goToX(2.6);
+      }
+    }
+  } else if (location == 2) {
+    turn(0);
+
+    if (isAheadClear()) {
+      // Middle is clear, go
+      goToX(2.6);
+    } else {
+      // Check top
+      goToY(1.5);
+      turn(0);
+      if (isAheadClear()) {
+        // Top is clear, go
+        goToX(2.8);
+      } else {
+        // Bottom is clear, go
+        goToY(0.4);
+        goToX(2.6);
+      }
+    }
+
+  } else {
+    turn(0);
+
+    if (isAheadClear()) {
+      // Bottom is clear, go
+      goToX(2.6);
+    } else {
+      // Check middle
+      goToY(1);
+      turn(0);
+      if (isAheadClear()) {
+        // Middle is clear, go
+        goToX(2.6);
+      } else {
+        // Top is clear, go
+        goToY(1.5);
+        goToX(2.6);
+      }
+    }
+
+
+
+    // Go to area in front of limbo
+    Enes100.println("Going in front of limbo");
+    goToX(3);
+    goToY(1.6);
+    // Lower rack before limbo
+    lowerRack();
+    goToX(3.9);
+  }
+}
+
+void loop() {
+  // delay(1000);
+  // measureWater();
+  update();
+}
+
+void assignPinModes() {
+  // Drive motors
+  pinMode(PIN_MOTOR_1_FORWARD, OUTPUT);
+  pinMode(PIN_MOTOR_1_REVERSE, OUTPUT);
+  pinMode(PIN_MOTOR_2_FORWARD, OUTPUT);
+  pinMode(PIN_MOTOR_2_REVERSE, OUTPUT);
+  // Rack and Pinion Motor
+  pinMode(PIN_ENA, OUTPUT);
+  pinMode(PIN_RACK_1, OUTPUT);
+  pinMode(PIN_RACK_2, OUTPUT);
+  // Ultrasonic Sensors
+  pinMode(PIN_US_FRONT_TRIG, OUTPUT);
+  pinMode(PIN_US_FRONT_ECHO, INPUT);
+  pinMode(PIN_US_MISSION_TRIG, OUTPUT);
+  pinMode(PIN_US_MISSION_ECHO, INPUT);
+}
+
+void update() {
+  // Updates angle, x, and y
+  currentTheta = Enes100.getTheta();
+  currentX = Enes100.getX();
+  currentY = Enes100.getY();
+}
+
+// Turning methods
+
+void turn(float desiredAngle) {
+
+  float turnDistance, deltaCurrentDesired1, deltaCurrentDesired2;
+  update();
+  turnDistance = getShortestTurn(currentTheta, desiredAngle);
+
+  // Turns left if the shortest distance is left, otherwise turns right
+
+
+  if (turnDistance > 0) {  // Making a counter-clockwise turn
+
+    while (abs(desiredAngle - currentTheta) > LARGE_ANGLE_RANGE) {  // While outside of large angle range
+      spinCCW(FAST_SPEED);
+      update();
+    }
+
+    // Stop motors and wait
+    Enes100.println("Within large angle range.");
+    stopMotors();
+    delay(BUFFER);
+    update();
+
+    while (abs(desiredAngle - currentTheta) > SMALL_ANGLE_RANGE) {  // While outside of small angle range
+      deltaCurrentDesired1 = abs(desiredAngle - currentTheta);
+      spinCCW(SLOW_SPEED);
+      delay(TURN_BUFFER);
+      stopMotors();
+      delay(TURN_BUFFER);
+      update();
+      deltaCurrentDesired2 = abs(desiredAngle - currentTheta);
+      if (deltaCurrentDesired2 > deltaCurrentDesired1) {
+        break;
+      }
+    }
+    stopMotors();
+    if (abs(desiredAngle - currentTheta) > SMALL_ANGLE_RANGE) {
+      turn(desiredAngle);
+    }
+    // Stop motors and wait
+    delay(BUFFER / 4);
+    Enes100.println("Within small angle range.");
+
+  } else {  // Making a clockwise turn
+
+    while (abs(desiredAngle - currentTheta) > LARGE_ANGLE_RANGE) {  // While outside of large angle range
+      spinCW(FAST_SPEED);
+      update();
+    }
+
+    // Stop motors and wait
+    stopMotors();
+    delay(BUFFER / 4);
+    Enes100.println("Within large angle range.");
+    update();
+
+    // Slowing down as we approach the desired angle
+    while (abs(desiredAngle - currentTheta) > SMALL_ANGLE_RANGE) {  // While outside of small angle range
+      deltaCurrentDesired1 = abs(desiredAngle - currentTheta);
+      spinCW(SLOW_SPEED);
+      delay(TURN_BUFFER);
+      stopMotors();
+      delay(TURN_BUFFER);
+      update();
+      deltaCurrentDesired2 = abs(desiredAngle - currentTheta);
+      if (deltaCurrentDesired2 > deltaCurrentDesired1) {
+        break;
+      }
+    }
+    stopMotors();
+    // Stop motors and wait
+    if (abs(desiredAngle - currentTheta) > SMALL_ANGLE_RANGE) {
+      turn(desiredAngle);
+    }
+    delay(100);
+    Enes100.println("Within small angle range.");
+  }
+}
+
+void spinCCW(int speed) {
+  setLeftPWM(-speed);
+  setRightPWM(speed);
+}
+
+void spinCW(int speed) {
+  setLeftPWM(speed);
+  setRightPWM(-speed);
+}
+
+void leftTurn(float desiredAngle) {
+  float turnDistance;
+  update();
+  turnDistance = getShortestTurn(currentTheta, desiredAngle);
+
+  // Slowing down as we approach the desired angle
+  while (getShortestTurn(currentTheta, desiredAngle) > .08) {
+    update();
+    setLeftPWM(SLOW_SPEED + 10);
+    delay(TURN_BUFFER);
+    stopMotors();
+    delay(TURN_BUFFER);
+    update();
+    Enes100.print("Current: ");
+    Enes100.print(currentTheta);
+    Enes100.print(" Desired: ");
+    Enes100.print(desiredAngle);
+  }
+
+  stopMotors();
+  delay(BUFFER / 2);
+}
+
+// Moving methods
+
+void goToY(float desiredY) {
+
+  // Within how many meters the OTV will reach site
+  update();
+  float desiredTheta;
+  // Determines whether the desired Y is above or below the current y, turns appropriately
+
+  if (desiredY > currentY) {
+    Enes100.println("Turn north.");
+    desiredTheta = HALF_PI;
+    turn(HALF_PI);
+  } else {
+    Enes100.println("Turn south.");
+    desiredTheta = (-1 * HALF_PI);
+    turn(-1 * HALF_PI);
+  }
+
+  update();
+
+  // Moves towards the desired y value until it gets close
+  while (abs(desiredY - currentY) > DISTANCE_RANGE) {
+    setBothPWM(FAST_SPEED);
+    update();
+
+    if (abs(currentTheta - desiredTheta) > MOVING_RANGE) {
+      turn(desiredTheta);
+    }
+  }
+
+  // Stop when within range
+  stopMotors();
+}
+
+void goToX(float desiredX) {
+
+  // Within how many meters the OTV will reach site
+
+  update();
+  float desiredTheta;
+  // Determines whether the desired x is to the right or left of current x, turns appropriately
+  if (desiredX > currentX) {
+    Enes100.println("Turn east.");
+    desiredTheta = 0;
+    turn(0);
+  } else {
+    Enes100.println("Turn west.");
+    desiredTheta = PI;
+    turn(PI);
+  }
+
+  // Moves towards a desired x value until it gets close
+  while (abs(desiredX - currentX) > DISTANCE_RANGE) {
+    setBothPWM(FAST_SPEED);
+    update();
+
+    if (abs(currentTheta - desiredTheta) > 0.1) {
+      turn(desiredTheta);
+    }
+  }
+
+
+  // Stop when within range
+  stopMotors();
+}
+
+void reverseY(float distance) {
+  // Reverses in y-direction by distance
+
+  float desiredY;
+  float distanceRange = .05;
+
+  // Determines whether we want to reverse to the top or the bottom of the map
+  if (currentTheta > 0) {
+    desiredY = currentY - distance;
+    // Reversing to the desired direction
+    while (abs(currentY - desiredY) > distanceRange) {
+      setBothPWM(-FAST_SPEED);
+      update();
+    }
+
+    stopMotors();
+  } else {
+    desiredY = currentY + distance;
+    // Reversing to the desired direction
+    while (abs(currentY - desiredY) > distanceRange) {
+      setBothPWM(-FAST_SPEED);
+      update();
+    }
+
+    stopMotors();
+  }
+}
+
+float getShortestTurn(float currentAngle, float desiredAngle) {
+  // Difference between current angle and desired angle (distance in radians we need to turn)
+  float angleDifference;
+  angleDifference = desiredAngle - currentAngle;
+
+  // Determines turn direction
+
+  if (angleDifference > PI) {  // Difference is larger than a full half-turn, subtract full turn to get shortest turn.
+    angleDifference = angleDifference - (2.0 * PI);
+  } else if (angleDifference <= (-1 * PI)) {  // Difference is larger than a full half-turn, add full turn to get shortest turn. (other direction)
+    angleDifference = angleDifference + (2.0 * PI);
+  }
+
+  // Returns distance in radians that needs to be travelled, negative is
+  return angleDifference;
+}
+
+// Motor methods
+
+void setMotorPWM(int motorId, int pwm) {
+
+  int forward_pin;
+  int reverse_pin;
+  int speed_pin;
+
+  // Edge cases if pwm exceeds 255 or -255
+  if (pwm > 255) {
+    pwm = 255;
+  } else if (pwm < -255) {
+    pwm = -255;
+  }
+
+  // Verify motorId
+  if (motorId < 1 || motorId > 2) {
+    return;
+  }
+
+  // Get pins to use
+  if (motorId == 1) {
+    forward_pin = PIN_MOTOR_1_FORWARD;
+    reverse_pin = PIN_MOTOR_1_REVERSE;
+    speed_pin = PIN_MOTOR_1_SPEED;
+  } else if (motorId == 2) {
+    forward_pin = PIN_MOTOR_2_FORWARD;
+    reverse_pin = PIN_MOTOR_2_REVERSE;
+    speed_pin = PIN_MOTOR_2_SPEED;
+  }
+
+  // Set pin PWM and GND
+  if (pwm >= 0) {
+    digitalWrite(forward_pin, HIGH);
+    digitalWrite(reverse_pin, LOW);
+    analogWrite(speed_pin, abs(pwm));
+  } else {
+    digitalWrite(forward_pin, LOW);
+    digitalWrite(reverse_pin, HIGH);
+    analogWrite(speed_pin, abs(pwm));
+  }
+}
+
+void stopMotors() {
+  setMotorPWM(1, 0);
+  setMotorPWM(2, 0);
+}
+
+void setBothPWM(int pwm) {
+  setRightPWM(pwm);
+  setLeftPWM(pwm);
+}
+
+void setRightPWM(int pwm) {
+  setMotorPWM(1, pwm);
+}
+
+void setLeftPWM(int pwm) {
+  // Fraction of pwm to add to left motor to account for lower speed
+  float offset = .27;
+  setMotorPWM(2, pwm + (offset * pwm));
+}
+
+// Mission methods
+
+void mission() {
+  // Measure water depth
+  measureWater();
+
+  // Check pollution
+  // checkPollution();
+
+  // Move backwards
+  setBothPWM(-SLOW_SPEED);
+  delay(BUFFER / 2);
+  stopMotors();
+
+  // Get sample
+  getSample();
+}
+
+void measureWater() {
+
+  const long sensorHeight = 75;
+
+  long duration;
+  long mm;
+  long waterDistance;
+
+  // Repeats pin assignment (this can probably be taken out)
+  pinMode(PIN_US_MISSION_TRIG, OUTPUT);
+  pinMode(PIN_US_MISSION_ECHO, INPUT);
+
+  // Pulses
+  digitalWrite(PIN_US_MISSION_TRIG, LOW);
+  delayMicroseconds(5);
+  digitalWrite(PIN_US_MISSION_TRIG, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(PIN_US_MISSION_TRIG, LOW);
+
+  // Read signal
+  duration = pulseIn(PIN_US_MISSION_ECHO, HIGH);
+  Enes100.println(duration);
+
+  // Convert to cm
+  mm = ((duration / 2.0) / 29.1) * 10;
+
+  Enes100.print("Distance in millimeters is ");
+  Enes100.println(mm);
+
+  // Subtracts sensor to water distance from sensor to bowl distance
+  waterDistance = sensorHeight - mm;
+
+  // Compares differences between water distance and 20, 30, 40 mm
+  int range20 = abs(20 - waterDistance);
+  int range30 = abs(30 - waterDistance);
+  int range40 = abs(40 - waterDistance);
+
+  if (range20 < range30 && range20 < range40) {
+    Enes100.mission(DEPTH, 20);
+    Serial.println("Water depth is 20 mm.");
+  } else if (range30 < range20 && range30 < range40) {
+    Enes100.mission(DEPTH, 30);
+    Serial.println("Water depth is 30 mm.");
+  } else {
+    Enes100.mission(DEPTH, 40);
+    Serial.println("Water depth is 40 mm.");
+  }
+}
+
+void checkPollution() {
+  // Might need to import ML model?
+  int prediction = Enes100.MLGetPrediction(1);
+
+  // Prediction = 0 will be unpolluted, prediction = 1 will be polluted
+  if (prediction == 0) {
+    Enes100.mission(WATER_TYPE, FRESH_UNPOLLUTED);
+  } else {
+    Enes100.mission(WATER_TYPE, FRESH_POLLUTED);
+  }
+}
+
+void getSample() {
+  bool rackMoving;
+  rackMoving = true;
+
+  if (rackMoving) {
+
+    // Moves rack and pinion down when top limit switch is not pressed
+    while (digitalRead(TOP_SW) != HIGH) {
+      analogWrite(PIN_ENA, RACK_SPEED);
+      digitalWrite(PIN_RACK_1, HIGH);
+      digitalWrite(PIN_RACK_2, LOW);
+    }
+
+    // Top limit switch is pressed, brakes motors
+    digitalWrite(PIN_RACK_1, LOW);
+    digitalWrite(PIN_RACK_2, LOW);
+    // Waits for water to be absorbed in diaper
+    delay(WATER_ABSORB_TIME);
+
+    // Moves rack and pinion up when bottom limit switch is not pressed
+    while (digitalRead(BOTTOM_SW) != HIGH) {  //moves rack and pinion up while bottom limit switch isnt pressed
+      analogWrite(PIN_ENA, RACK_SPEED);
+      digitalWrite(PIN_RACK_1, LOW);
+      digitalWrite(PIN_RACK_2, HIGH);
+    }
+
+    // Bottom limit switch is pressed, brakes motors
+    digitalWrite(PIN_RACK_1, LOW);
+    digitalWrite(PIN_RACK_2, LOW);
+    rackMoving = false;
+  }
+}
+
+void lowerRack() {
+
+  // Moves rack and pinion down when top limit switch is not pressed
+  while (digitalRead(TOP_SW) != HIGH) {
+    analogWrite(PIN_ENA, RACK_SPEED);
+    digitalWrite(PIN_RACK_1, HIGH);
+    digitalWrite(PIN_RACK_2, LOW);
+  }
+
+  // Top limit switch is pressed, brakes motors
+  digitalWrite(PIN_RACK_1, LOW);
+  digitalWrite(PIN_RACK_2, LOW);
+}
+
+bool isAheadClear() {
+
+  long duration;
+  long cm;
+
+  // Repeats pin assignment (this can probably be taken out)
+  pinMode(PIN_US_FRONT_TRIG, OUTPUT);
+  pinMode(PIN_US_FRONT_ECHO, INPUT);
+
+  // Pulses
+  digitalWrite(PIN_US_FRONT_TRIG, LOW);
+  delayMicroseconds(5);
+  digitalWrite(PIN_US_FRONT_TRIG, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(PIN_US_FRONT_TRIG, LOW);
+
+  // Read signal
+  duration = pulseIn(PIN_US_FRONT_ECHO, HIGH);
+  Enes100.println(duration);
+
+  // Convert to cm
+  cm = ((duration / 2.0) / 29.1);
+
+  Enes100.print("Distance in cm is ");
+  Enes100.println(cm);
+
+  if (cm < 30) {
+    return false;
+  } else {
+    return true;
+  }
+}
