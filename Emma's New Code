@@ -103,7 +103,7 @@ void setup() {
     Enes100.println("Limit not pressed");
   }
   Enes100.println("Limit pressed");
-  delay(BUFFER * 4);
+  delay(BUFFER * 6);
   stopMotors();
 
   // Mission tasks
