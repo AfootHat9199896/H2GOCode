@@ -23,6 +23,11 @@ const int PIN_US_MISSION_TRIG = 45;
 const int PIN_US_MISSION_ECHO = 46;
 const int PIN_US_MISSION_GROUND = 31;
 
+// Photoresistor
+const int PIN_PR_ANALOG_READ = A0;
+int COLOR_THRESHOLD; //Threshold for the value from photoresistor that determines if it has color, def need to test and change this once on OTV
+const int PR_LOOP = 20; // Amount of times you want it to check photoresistor value and average it out
+
 // WiFi Module
 const int PIN_WIFI_TX = 11;
 const int PIN_WIFI_RX = 10;
@@ -33,12 +38,11 @@ const int BOTTOM_SW = 35;
 const int FRONT_SW = 25;
 
 // Drive Motor Speeds
-const int FAST_SPEED = 120;
-const int FASTEST_SPEED = 180;
-const int SLOW_SPEED = 55;
+const int FAST_SPEED = 100;
+const int SLOW_SPEED = 50;
 
 // Rack and Pinion Motor Speed
-const int RACK_SPEED = 70;
+const int RACK_SPEED = 150;
 
 // Wait time for diaper in milliseconds
 const int WATER_ABSORB_TIME = 15000;
@@ -61,6 +65,11 @@ const int TURN_BUFFER = 100;
 float currentX;
 float currentY;
 float currentTheta;
+
+// led h bridge pins
+const int LED_HIGH = 49;
+const int LED_LOW = 47;
+const int LED_PWM = 8;
 
 // Main methods
 void setup() {
@@ -91,9 +100,13 @@ void setup() {
   // Navigate to mission site
   if (currentY > 1) {
     Enes100.println("OTV in upper location. Mission in lower location.");
+    // goToY(((UPPER_MISSION_Y - LOWER_MISSION_Y)/2) + LOWER_MISSION_Y);
+    // goToX2(0.35);
     goToY(LOWER_MISSION_Y);
   } else {
     Enes100.println("OTV in lower location. Mission in upper location.");
+    // goToY(((UPPER_MISSION_Y - LOWER_MISSION_Y)/2) + LOWER_MISSION_Y);
+    // goToX2(0.25);
     goToY(UPPER_MISSION_Y);
   }
 
@@ -145,7 +158,7 @@ void setup() {
 
   if (location == 1) {
     turn(0);
-    goToY2(.95);
+    goToY2(1.1);
     turn(0);
     if (isAheadClear()) {
       goToX(2.5);
@@ -170,7 +183,7 @@ void setup() {
   } else {
     turn(0);
     // Check middle
-    goToY2(.95);
+    goToY2(1.1);
     turn(0);
     if (isAheadClear()) {
       // Middle is clear, go
@@ -192,7 +205,7 @@ void setup() {
   lowerRack();
   turn(0);
   setBothPWM(FAST_SPEED);
-  delay(BUFFER*6);
+  delay(BUFFER*8);
   stopMotors();
 }
 
@@ -307,6 +320,84 @@ void turn(float desiredAngle) {
   }
 }
 
+void turn2pi(float desiredAngle) {
+
+  float turnDistance, deltaCurrentDesired1, deltaCurrentDesired2;
+  update();
+  turnDistance = getShortestTurn(currentTheta, desiredAngle);
+
+  // Turns left if the shortest distance is left, otherwise turns right
+
+
+  if (turnDistance > 0) {  // Making a counter-clockwise turn
+
+    while (abs(desiredAngle - abs(currentTheta)) > LARGE_ANGLE_RANGE) {  // While outside of large angle range
+      spinCCW(FAST_SPEED);
+      update();
+    }
+
+    // Stop motors and wait
+    Enes100.println("Within large angle range.");
+    stopMotors();
+    delay(TURN_BUFFER);
+    update();
+
+    while (abs(desiredAngle - abs(currentTheta)) > SMALL_ANGLE_RANGE) {  // While outside of small angle range
+      deltaCurrentDesired1 = abs(desiredAngle - abs(currentTheta));
+      spinCCW(SLOW_SPEED);
+      delay(TURN_BUFFER);
+      stopMotors();
+      delay(TURN_BUFFER);
+      update();
+      deltaCurrentDesired2 = abs(desiredAngle - abs(currentTheta));
+      if (deltaCurrentDesired2 > deltaCurrentDesired1) {
+        break;
+      }
+    }
+    stopMotors();
+    if (abs(desiredAngle - abs(currentTheta)) > SMALL_ANGLE_RANGE) {
+      turn(desiredAngle);
+    }
+    // Stop motors and wait
+    delay(TURN_BUFFER);
+    Enes100.println("Within small angle range.");
+
+  } else {  // Making a clockwise turn
+
+    while (abs(desiredAngle - abs(currentTheta)) > LARGE_ANGLE_RANGE) {  // While outside of large angle range
+      spinCW(FAST_SPEED);
+      update();
+    }
+
+    // Stop motors and wait
+    stopMotors();
+    delay(TURN_BUFFER);
+    Enes100.println("Within large angle range.");
+    update();
+
+    // Slowing down as we approach the desired angle
+    while (abs(desiredAngle - abs(currentTheta)) > SMALL_ANGLE_RANGE) {  // While outside of small angle range
+      deltaCurrentDesired1 = abs(desiredAngle - abs(currentTheta));
+      spinCW(SLOW_SPEED);
+      delay(TURN_BUFFER);
+      stopMotors();
+      delay(TURN_BUFFER);
+      update();
+      deltaCurrentDesired2 = abs(desiredAngle - abs(currentTheta));
+      if (deltaCurrentDesired2 > deltaCurrentDesired1) {
+        break;
+      }
+    }
+    stopMotors();
+    // Stop motors and wait
+    if (abs(desiredAngle - abs(currentTheta)) > SMALL_ANGLE_RANGE) {
+      turn(desiredAngle);
+    }
+    delay(TURN_BUFFER);
+    Enes100.println("Within small angle range.");
+  }
+}
+
 void spinCCW(int speed) {
   setLeftPWM(-speed);
   setRightPWM(speed);
@@ -373,7 +464,7 @@ void goToY2(float desiredY) {
 
   // Moves towards the desired y value until it gets close
   while (abs(desiredY - currentY) > DISTANCE_RANGE) {
-    setBothPWM(FASTEST_SPEED);
+    setBothPWM(FAST_SPEED);
     update();
 
     if (abs(currentTheta - desiredTheta) > .15) {
@@ -399,12 +490,44 @@ void goToX(float desiredX) {
   } else {
     Enes100.println("Turn west.");
     desiredTheta = PI;
+    turn2pi(PI);
+  }
+
+  // Moves towards a desired x value until it gets close
+  while (abs(desiredX - currentX) > DISTANCE_RANGE) {
+    setBothPWM(FAST_SPEED);
+    update();
+
+    if (abs(currentTheta - desiredTheta) > 0.13) {
+      turn(desiredTheta);
+    }
+  }
+
+
+  // Stop when within range
+  stopMotors();
+}
+
+void goToX2(float desiredX) {
+
+  // Within how many meters the OTV will reach site
+
+  update();
+  float desiredTheta;
+  // Determines whether the desired x is to the right or left of current x, turns appropriately
+  if (desiredX > currentX) {
+    Enes100.println("Turn east.");
+    desiredTheta = 0;
+    turn(0);
+  } else {
+    Enes100.println("Turn west.");
+    desiredTheta = PI;
     turn(PI);
   }
 
   // Moves towards a desired x value until it gets close
   while (abs(desiredX - currentX) > DISTANCE_RANGE) {
-    setBothPWM(FASTEST_SPEED);
+    setBothPWM(SLOW_SPEED);
     update();
 
     if (abs(currentTheta - desiredTheta) > 0.13) {
@@ -532,11 +655,11 @@ void mission() {
   measureWater();
 
   // Check pollution
-  // checkPollution();
+  findPollutants();
 
   // Move backwards
   setBothPWM(-SLOW_SPEED);
-  delay(BUFFER * 2);
+  delay(BUFFER * 4);
   stopMotors();
 
   // Get sample
@@ -545,7 +668,7 @@ void mission() {
 
 void measureWater() {
 
-  const long sensorHeight = 75;
+  const long sensorHeight = 82;
 
   long duration;
   float mm;
@@ -557,7 +680,7 @@ void measureWater() {
   pinMode(PIN_US_MISSION_ECHO, INPUT);
 
   // Amount of times you want it to loop through 
-  const int loopAverage = 20;
+  const int loopAverage = 50;
 
   for (int i = 0; i < loopAverage; i++) {
     // Pulses
@@ -569,10 +692,11 @@ void measureWater() {
 
     // Read signal
     duration = pulseIn(PIN_US_MISSION_ECHO, HIGH);
-    Enes100.println(duration);
 
     // Convert to cm
     mm = ((duration / 2.0) / 29.1) * 10;
+    Enes100.print("mm = ");
+    Enes100.println(mm);
 
     //Enes100.print("Distance in millimeters is ");
     //Enes100.println(mm);
@@ -582,11 +706,16 @@ void measureWater() {
 
     // Adds to average variable to be divided after the loop ends
     averageWaterDepth += waterDistance;
+
+    delay(100);
   }
   //Divides to get average 
   averageWaterDepth = averageWaterDepth / loopAverage;
   // Reassigns averageWaterDepth it to waterDistance 
   waterDistance = averageWaterDepth;
+
+  Enes100.print("water height:");
+  Enes100.println(waterDistance);
 
   // Compares differences between water distance and 20, 30, 40 mm
   float range20 = abs(20 - waterDistance);
@@ -609,16 +738,51 @@ void measureWater() {
 
 }
 
-void checkPollution() {
-  // Might need to import ML model?
-  int prediction = Enes100.MLGetPrediction(1);
+// Finds pollutants using photoResistor
+void findPollutants() {
 
-  // Prediction = 0 will be unpolluted, prediction = 1 will be polluted
-  if (prediction == 0) {
-    Enes100.mission(WATER_TYPE, FRESH_UNPOLLUTED);
+  if(currentY > 1){
+    COLOR_THRESHOLD = 640;
   } else {
-    Enes100.mission(WATER_TYPE, FRESH_POLLUTED);
+    COLOR_THRESHOLD = 715;
   }
+
+  pinMode(LED_HIGH, OUTPUT);
+  pinMode(LED_LOW, OUTPUT);
+  pinMode(LED_PWM, OUTPUT);
+
+  digitalWrite(LED_HIGH, HIGH);
+  digitalWrite(LED_LOW, LOW);
+  analogWrite(LED_PWM, 10);
+
+  int resistorAVG = 0;
+
+  for (int i = 0; i < PR_LOOP; i++){
+    resistorAVG += analogRead(PIN_PR_ANALOG_READ);
+    delay(200);
+  }
+
+  resistorAVG = resistorAVG / PR_LOOP;
+
+  if (resistorAVG > COLOR_THRESHOLD) {
+    // I have it print to Enes100 and serial so you can test it when plugged in type 
+    Enes100.print("Has pollutants, photoresistor average value: ");
+    Enes100.println(resistorAVG);
+    Serial.print("Has pollutants, photoresistor average value: ");
+    Serial.println(resistorAVG);
+     Enes100.mission(WATER_TYPE, FRESH_POLLUTED);
+
+  } else {
+    Enes100.print("Unpolluted, photoresistor average value: ");
+    Enes100.println(resistorAVG);
+    Serial.print("Unpolluted, photoresistor average value: ");
+    Serial.println(resistorAVG);
+     Enes100.mission(WATER_TYPE, FRESH_UNPOLLUTED);
+
+  }
+  
+  digitalWrite(LED_HIGH, LOW);
+
 }
 
 void getSample() {
