@@ -659,7 +659,7 @@ void mission() {
 
   // Move backwards
   setBothPWM(-SLOW_SPEED);
-  delay(BUFFER * 4);
+  delay(BUFFER * 3);
   stopMotors();
 
   // Get sample
