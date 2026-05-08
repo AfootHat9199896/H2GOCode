@@ -126,7 +126,13 @@ if(currentX < 1){
     reverseY(0.25);
 
     // FIRST CHECK
+    update();
+    if(currentX < 0.6) {
     goToX(0.62);
+    } else {
+      goToY2(1.1);
+      turn(0);
+    }
 
     int location;  // 1 is top, 2 is middle, 3 is bottom
 
