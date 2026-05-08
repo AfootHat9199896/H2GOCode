@@ -14,7 +14,7 @@ const int PIN_MOTOR_2_SPEED = 4;
 // Rack and Pinion Motor Assignments
 const int PIN_RACK_1 = 26;
 const int PIN_RACK_2 = 50;
-const int PIN_ENA = 12;
+// const int PIN_ENA = 12;
 
 //Ultrasonic Assignments
 const int PIN_US_FRONT_TRIG = 9;
@@ -42,7 +42,7 @@ const int FAST_SPEED = 100;
 const int SLOW_SPEED = 50;
 
 // Rack and Pinion Motor Speed
-const int RACK_SPEED = 150;
+// const int RACK_SPEED = 150;
 
 // Wait time for diaper in milliseconds
 const int WATER_ABSORB_TIME = 15000;
@@ -94,106 +94,128 @@ void setup() {
 
   // Assign local variables
   update();
-
-  delay(BUFFER);
-  raiseRack();
-  // Navigate to mission site
-  if (currentY > 1) {
-    Enes100.println("OTV in upper location. Mission in lower location.");
-    // goToY(((UPPER_MISSION_Y - LOWER_MISSION_Y)/2) + LOWER_MISSION_Y);
-    // goToX2(0.35);
-    goToY(LOWER_MISSION_Y);
-  } else {
-    Enes100.println("OTV in lower location. Mission in upper location.");
-    // goToY(((UPPER_MISSION_Y - LOWER_MISSION_Y)/2) + LOWER_MISSION_Y);
-    // goToX2(0.25);
-    goToY(UPPER_MISSION_Y);
-  }
-
-  // If limit switch isn't pressed, move forward until it is. Then stop.
-  if (digitalRead(FRONT_SW) != HIGH) {
-    setBothPWM(SLOW_SPEED);
-    Enes100.println("Limit not pressed");
-  }
-  Enes100.println("Limit pressed");
-  delay(BUFFER * 6);
-  stopMotors();
-
-  // Mission tasks
-  mission();
-
-  // Reverse to center of arena
-  reverseY(0.25);
-
-  // FIRST CHECK
-  goToX(0.62);
-
-  int location;  // 1 is top, 2 is middle, 3 is bottom
-
-  Enes100.println("Start the process");
-
-
-  if (isAheadClear()) {
-    // Middle is clear, go
-    goToX(1.6);
-    location = 2;
-    Enes100.println("Location 2");
-  } else {
-    // Check top
-    goToY2(1.65);
-    turn(0);
-    if (isAheadClear()) {
-      // Top is clear, go
-      goToX(1.6);
-      location = 1;
-      Enes100.println("Location 1");
+if(currentX < 1){
+    delay(BUFFER);
+    raiseRack();
+    // Navigate to mission site
+    if (currentY > 1) {
+      Enes100.println("OTV in upper location. Mission in lower location.");
+      // goToY(((UPPER_MISSION_Y - LOWER_MISSION_Y)/2) + LOWER_MISSION_Y);
+      // goToX2(0.35);
+      goToY(LOWER_MISSION_Y);
     } else {
-      // Bottom is clear, go
-      goToY2(0.4);
-      goToX(1.6);
-      location = 3;
-      Enes100.println("Location 3");
-    }
-  }
-
-  if (location == 1) {
-    turn(0);
-    goToY2(1.1);
-    turn(0);
-    if (isAheadClear()) {
-      goToX(2.5);
-    } else {
-      goToY2(0.4);
-      goToX(2.5);
-    }
-  } else if (location == 2) {
-    turn(0);
-    // Check top
-    goToY2(1.65);
-    turn(0);
-    if (isAheadClear()) {
-      // Top is clear, go
-      goToX(2.8);
-    } else {
-      // Bottom is clear, go
-      goToY2(0.4);
-      goToX(2.5);
+      Enes100.println("OTV in lower location. Mission in upper location.");
+      // goToY(((UPPER_MISSION_Y - LOWER_MISSION_Y)/2) + LOWER_MISSION_Y);
+      // goToX2(0.25);
+      goToY(UPPER_MISSION_Y);
     }
 
-  } else {
-    turn(0);
-    // Check middle
-    goToY2(1.1);
-    turn(0);
+    // If limit switch isn't pressed, move forward until it is. Then stop.
+    if (digitalRead(FRONT_SW) != HIGH) {
+      setBothPWM(SLOW_SPEED);
+      Enes100.println("Limit not pressed");
+    }
+    Enes100.println("Limit pressed");
+    delay(BUFFER * 6);
+    stopMotors();
+
+    // Mission tasks
+    mission();
+
+    // Reverse to center of arena
+    reverseY(0.25);
+
+    // FIRST CHECK
+    goToX(0.62);
+
+    int location;  // 1 is top, 2 is middle, 3 is bottom
+
+    Enes100.println("Start the process");
+
+
     if (isAheadClear()) {
       // Middle is clear, go
-      goToX(2.5);
+      goToX(1.6);
+      location = 2;
+      Enes100.println("Location 2");
     } else {
-      // Top is clear, go
+      // Check top
       goToY2(1.65);
-      goToX(2.5);
+      turn(0);
+      if (isAheadClear()) {
+        // Top is clear, go
+        goToX(1.6);
+        location = 1;
+        Enes100.println("Location 1");
+      } else {
+        // Bottom is clear, go
+        goToY2(0.4);
+        goToX(1.6);
+        location = 3;
+        Enes100.println("Location 3");
+      }
+    }
+
+    if (location == 1) {
+      turn(0);
+      goToY2(1.1);
+      turn(0);
+      if (isAheadClear()) {
+        goToX(2.5);
+      } else {
+        goToY2(0.4);
+        goToX(2.5);
+      }
+    } else if (location == 2) {
+      turn(0);
+      // Check top
+      goToY2(1.65);
+      turn(0);
+      if (isAheadClear()) {
+        // Top is clear, go
+        goToX(2.8);
+      } else {
+        // Bottom is clear, go
+        goToY2(0.4);
+        goToX(2.5);
+      }
+
+    } else {
+      turn(0);
+      // Check middle
+      goToY2(1.1);
+      turn(0);
+      if (isAheadClear()) {
+        // Middle is clear, go
+        goToX(2.5);
+      } else {
+        // Top is clear, go
+        goToY2(1.65);
+        goToX(2.5);
+      }
+    }
+
+} else{
+  Enes100.println("oops failure happened - time to see if this new code works haha");
+  goToY2(1.65);
+  turn(0);
+  if(isAheadClear()) {
+    // top is clear, go
+    goToX(2.8);
+  } else {
+    goToY2(1.1);
+    if(isAheadClear()) {
+      // middle is clear, go
+      goToX(2.8);
+    } else {
+      goToY2(0.4);
+      // bottom hopefully is clear? go
+      goToX(2.8);
     }
   }
+
+
+}
 
 
 
@@ -222,7 +244,7 @@ void assignPinModes() {
   pinMode(PIN_MOTOR_2_FORWARD, OUTPUT);
   pinMode(PIN_MOTOR_2_REVERSE, OUTPUT);
   // Rack and Pinion Motor
-  pinMode(PIN_ENA, OUTPUT);
+  // pinMode(PIN_ENA, OUTPUT);
   pinMode(PIN_RACK_1, OUTPUT);
   pinMode(PIN_RACK_2, OUTPUT);
   // Ultrasonic Sensors
@@ -793,7 +815,7 @@ void getSample() {
 
     // Moves rack and pinion down when top limit switch is not pressed
     while (digitalRead(TOP_SW) != HIGH) {
-      analogWrite(PIN_ENA, RACK_SPEED);
+      // analogWrite(PIN_ENA, RACK_SPEED);
       digitalWrite(PIN_RACK_1, HIGH);
       digitalWrite(PIN_RACK_2, LOW);
     }
@@ -806,7 +828,7 @@ void getSample() {
 
     // Moves rack and pinion up when bottom limit switch is not pressed
     while (digitalRead(BOTTOM_SW) != HIGH) {  //moves rack and pinion up while bottom limit switch isnt pressed
-      analogWrite(PIN_ENA, RACK_SPEED);
+      // analogWrite(PIN_ENA, RACK_SPEED);
       digitalWrite(PIN_RACK_1, LOW);
       digitalWrite(PIN_RACK_2, HIGH);
     }
@@ -822,7 +844,7 @@ void lowerRack() {
 
   // Moves rack and pinion down when top limit switch is not pressed
   while (digitalRead(TOP_SW) != HIGH) {
-    analogWrite(PIN_ENA, RACK_SPEED);
+    // analogWrite(PIN_ENA, RACK_SPEED);
     digitalWrite(PIN_RACK_1, HIGH);
     digitalWrite(PIN_RACK_2, LOW);
   }
@@ -836,7 +858,7 @@ void raiseRack() {
 
   // Moves rack and pinion down when top limit switch is not pressed
   while (digitalRead(BOTTOM_SW) != HIGH) {
-    analogWrite(PIN_ENA, RACK_SPEED);
+    // analogWrite(PIN_ENA, RACK_SPEED);
     digitalWrite(PIN_RACK_1, LOW);
     digitalWrite(PIN_RACK_2, HIGH);
   }
