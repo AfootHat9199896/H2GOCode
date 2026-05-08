@@ -196,6 +196,7 @@ if(currentX < 1){
     }
 
 } else{
+//only works if past first line of obstracles, if not, we cooked 
   Enes100.println("oops failure happened - time to see if this new code works haha");
   goToY2(1.65);
   turn(0);
